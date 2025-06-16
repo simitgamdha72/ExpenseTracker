@@ -1,0 +1,153 @@
+using ExpenseTracker.Models.Dto;
+using ExpenseTracker.Service.Interface;
+using ExpenseTracker.Service.Validations;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace ExpenseTracker.API.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+[Authorize(Roles = "Admin")]
+public class ExpenseCategoriesController : ControllerBase
+{
+
+    private readonly IExpenseCategoriesService _expenseCategoriesService;
+
+    public ExpenseCategoriesController(IExpenseCategoriesService expenseCategoriesService)
+    {
+        _expenseCategoriesService = expenseCategoriesService;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<ExpenseCategoryDto>>> GetCategories()
+    {
+        try
+        {
+            return Ok(await _expenseCategoriesService.GetCategoriesAsync());
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+
+    }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<ExpenseCategoryDto>> GetCategory(int id)
+    {
+        try
+        {
+            ExpenseCategoryDto? expenseCategoryDto = await _expenseCategoriesService.GetCategoryAsync(id);
+
+            if (expenseCategoryDto == null)
+            {
+                return NotFound("Category not found");
+            }
+
+            return Ok(expenseCategoryDto);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+
+    }
+
+    [HttpPost]
+    [Trim]
+    public async Task<IActionResult> CreateCategory(ExpenseCategoryDto expenseCategoryDto)
+    {
+        try
+        {
+
+            // if (expenseCategoryDto == null)
+            // {
+            //     return BadRequest("ExpenseCategoryDto cannot be null.");
+            // }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await _expenseCategoriesService.CreateCategoryAsync(expenseCategoryDto);
+
+            if (!result.Success)
+            {
+                return Conflict(result.Message);
+            }
+
+            return CreatedAtAction(nameof(GetCategory), new { id = result.Category!.Id }, result.Category);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+
+    }
+
+    [HttpPut("{id}")]
+    [Trim]
+    public async Task<IActionResult> UpdateCategory(int id, ExpenseCategoryDto expenseCategoryDto)
+    {
+        if (id != expenseCategoryDto.Id)
+        {
+            return BadRequest("Category ID mismatch");
+        }
+
+        try
+        {
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await _expenseCategoriesService.UpdateCategoryAsync(id, expenseCategoryDto);
+
+            if (!result.Success)
+            {
+                return BadRequest(result.Message);
+            }
+
+            return CreatedAtAction(nameof(GetCategory), new { id = result.Category!.Id }, result.Category);
+
+        }
+        catch (Exception ex)
+        {
+            if (ex.Message == "Exist")
+            {
+                return Conflict("Category name already in use!");
+            }
+            else
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+
+
+        }
+
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteCategory(int id)
+    {
+        try
+        {
+            var result = await _expenseCategoriesService.DeleteCategoryAsync(id);
+
+            if (!result.Success)
+            {
+                return NotFound(result.Message);
+            }
+
+            return Ok(result.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+
+    }
+}
