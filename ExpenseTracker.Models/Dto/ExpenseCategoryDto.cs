@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ExpenseTracker.Models.Validations;
 
 namespace ExpenseTracker.Models.Dto;
 
@@ -6,12 +7,12 @@ public class ExpenseCategoryDto
 {
     public int Id { get; set; }
 
-    [Required(ErrorMessage = "Category Name is Required")]
-    [RegularExpression(@"^(?=.*[A-Za-z])[A-Za-z\s]+$", ErrorMessage = "Name must contain only letters and cannot be just spaces.")]
+    [Required(ErrorMessage = RequiredValidationMessages.CategoryRequired)]
+    [RegularExpression(@"^(?=.*[A-Za-z])[A-Za-z\s]+$", ErrorMessage = ValidationMessages.NameOnlyLetters)]
     public string Name { get; set; } = null!;
 
-    [Required(ErrorMessage = "Description is Required")]
-    [RegularExpression(@"^(?!\s*$).+", ErrorMessage = "Description cannot be only spaces.")]
+    [Required(ErrorMessage = RequiredValidationMessages.DescriptionRequired)]
+    [RegularExpression(@"^(?!\s*$).+", ErrorMessage = ValidationMessages.DescriptionCannotBeSpaces)]
     public string? Description { get; set; }
 
 }

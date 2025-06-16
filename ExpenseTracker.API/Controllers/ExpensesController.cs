@@ -3,6 +3,7 @@ using ExpenseTracker.Service.Interface;
 using ExpenseTracker.Models.Dto;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
 
 namespace ExpenseTracker.API.Controllers;
 
@@ -25,7 +26,7 @@ public class ExpensesController : ControllerBase
         {
             if (!User.Identity!.IsAuthenticated)
             {
-                return NotFound("User not found!");
+                return NotFound(ErrorMessages.UserNotFound);
             }
 
             int? userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
@@ -40,7 +41,7 @@ public class ExpensesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"An error occurred while retrieving expenses: {ex.Message}");
+            return StatusCode(500, new { message = ErrorMessages.GetExpensesFailed, detail = ex.Message });
         }
     }
 
@@ -52,7 +53,7 @@ public class ExpensesController : ControllerBase
         {
             if (!User.Identity!.IsAuthenticated)
             {
-                return NotFound("User not found!");
+                return NotFound(ErrorMessages.UserNotFound);
             }
 
             int? userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
@@ -66,14 +67,14 @@ public class ExpensesController : ControllerBase
 
             if (expense == null)
             {
-                return NotFound("Expense not found");
+                return NotFound(ErrorMessages.ExpenseNotFound);
             }
 
             return Ok(expense);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"An error occurred while retrieving the expense: {ex.Message}");
+            return StatusCode(500, new { message = ErrorMessages.GetExpensesFailed, detail = ex.Message });
         }
     }
 
@@ -85,7 +86,7 @@ public class ExpensesController : ControllerBase
         {
             if (!User.Identity!.IsAuthenticated)
             {
-                return NotFound("User not found!");
+                return NotFound(ErrorMessages.UserNotFound);
             }
 
             int? userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
@@ -111,7 +112,7 @@ public class ExpensesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"An error occurred while creating the expense: {ex.Message}");
+            return StatusCode(500, new { message = ErrorMessages.CreateExpenseFailed, detail = ex.Message });
         }
     }
 
@@ -120,12 +121,14 @@ public class ExpensesController : ControllerBase
     public async Task<IActionResult> UpdateExpense(int id, [FromBody] ExpenseDto expenseDto)
     {
         if (id != expenseDto.Id)
-            return BadRequest("Expense ID mismatch");
+        {
+            return BadRequest(ErrorMessages.ExpenseIdMismatch);
+        }
         try
         {
             if (!User.Identity!.IsAuthenticated)
             {
-                return NotFound("User not found!");
+                return NotFound(ErrorMessages.UserNotFound);
             }
 
             int? userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
@@ -151,7 +154,7 @@ public class ExpensesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"An error occurred while updating the expense: {ex.Message}");
+            return StatusCode(500, new { message = ErrorMessages.UpdateExpenseFailed, detail = ex.Message });
         }
     }
 
@@ -163,7 +166,7 @@ public class ExpensesController : ControllerBase
         {
             if (!User.Identity!.IsAuthenticated)
             {
-                return NotFound("User not found!");
+                return NotFound(ErrorMessages.UserNotFound);
             }
 
             int? userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
@@ -184,7 +187,7 @@ public class ExpensesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"An error occurred while deleting the expense: {ex.Message}");
+            return StatusCode(500, new { message = ErrorMessages.DeleteExpenseFailed, detail = ex.Message });
         }
     }
 
@@ -200,7 +203,7 @@ public class ExpensesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"An error occurred while retrieving expenses: {ex.Message}");
+            return StatusCode(500, new { message = ErrorMessages.GetExpensesFailed, detail = ex.Message });
         }
     }
 

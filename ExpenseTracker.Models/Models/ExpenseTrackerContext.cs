@@ -104,6 +104,7 @@ public partial class ExpenseTrackerContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Address).HasMaxLength(500);
+            entity.Property(e => e.Contactnumber).HasColumnName("contactnumber");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_at");
@@ -117,7 +118,6 @@ public partial class ExpenseTrackerContext : DbContext
                 .HasMaxLength(100)
                 .HasColumnName("lastname");
             entity.Property(e => e.PasswordHash).HasColumnName("password_hash");
-            entity.Property(e => e.Phone).HasColumnName("phone");
             entity.Property(e => e.RoleId)
                 .HasDefaultValueSql("1")
                 .HasColumnName("role_id");

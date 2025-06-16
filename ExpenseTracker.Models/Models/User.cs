@@ -21,7 +21,7 @@ public partial class User
 
     public string Lastname { get; set; } = null!;
 
-    public string Phone { get; set; } = null!;
+    public string Contactnumber { get; set; } = null!;
 
     public int RoleId { get; set; }
 

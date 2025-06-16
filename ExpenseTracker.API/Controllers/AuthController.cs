@@ -1,4 +1,5 @@
 using ExpenseTracker.Models.Dto;
+using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
 using ExpenseTracker.Service.Interface;
 using ExpenseTracker.Service.Validations;
 using Microsoft.AspNetCore.Mvc;
@@ -33,11 +34,11 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred during registration");
+            _logger.LogError(ex, ErrorMessages.RegistrationFailed);
 
-            if (ex.Message == "Exist")
+            if (ex.Message == ErrorMessages.EmailOrUsernameExists)
             {
-                return Conflict("Email or Username already exists.");
+                return Conflict(ErrorMessages.EmailOrUsernameExists);
             }
             else
             {
@@ -62,15 +63,15 @@ public class AuthController : ControllerBase
 
             if (token == null)
             {
-                return Unauthorized("Invalid credentials");
+                return Unauthorized(ErrorMessages.InvalidCredentials);
             }
 
             return Ok(new { token });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred during login");
-            return StatusCode(500, "An error occurred while logging in.");
+            _logger.LogError(ex, ErrorMessages.LoginFailed);
+            return StatusCode(500, ErrorMessages.LoginFailed);
         }
     }
 

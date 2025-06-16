@@ -1,42 +1,43 @@
 using System.ComponentModel.DataAnnotations;
+using ExpenseTracker.Models.Validations;
 
 namespace ExpenseTracker.Models.Dto;
 
 public class RegisterDto
 {
-    [Required]
-    [RegularExpression(@"^\S+$", ErrorMessage = "Username cannot contain spaces.")]
+    [Required(ErrorMessage = RequiredValidationMessages.UsernameRequired)]
+    [RegularExpression(@"^\S+$", ErrorMessage = ValidationMessages.NoSpacesUsername)]
     public string Username { get; set; } = "";
 
-    [Required(ErrorMessage = "Email is required")]
-    [EmailAddress(ErrorMessage = "Invalid email address")]
+    [Required(ErrorMessage = RequiredValidationMessages.EmailRequired)]
+    [EmailAddress(ErrorMessage = ValidationMessages.InvalidEmail)]
     [DataType(DataType.EmailAddress)]
     [RegularExpression(@"^[a-zA-Z0-9][a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
-   ErrorMessage = "Email cannot start with a special character")]
+   ErrorMessage = ValidationMessages.EmailSpecialChar)]
     public string Email { get; set; } = "";
 
-    [Required(ErrorMessage = "Password is required")]
+    [Required(ErrorMessage = RequiredValidationMessages.PasswordRequired)]
     [DataType(DataType.Password)]
-    [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be at least 8 characters long.")]
+    [StringLength(100, MinimumLength = 8, ErrorMessage = ValidationMessages.PasswordMinLength)]
     [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])\S{8,}$",
-    ErrorMessage = "Password must be at least 8 characters, include uppercase, lowercase, number, special character, and have no spaces.")]
+    ErrorMessage = ValidationMessages.PasswordRequirements)]
     public string Password { get; set; } = "";
 
     [Required]
     public int? RoleId { get; set; }
 
-    [Required(ErrorMessage = "FirstName is required")]
-    [RegularExpression(@"^(?=.*[A-Za-z])[A-Za-z\s]+$", ErrorMessage = "FirstName must contain only letters and cannot be just spaces.")]
+    [Required(ErrorMessage = RequiredValidationMessages.FirstNameRequired)]
+    [RegularExpression(@"^(?=.*[A-Za-z])[A-Za-z\s]+$", ErrorMessage = ValidationMessages.FirstNameOnlyLetters)]
     public string Firstname { get; set; } = null!;
 
-    [Required(ErrorMessage = "LastName is required")]
-    [RegularExpression(@"^(?=.*[A-Za-z])[A-Za-z\s]+$", ErrorMessage = "LastName must contain only letters and cannot be just spaces.")]
+    [Required(ErrorMessage = RequiredValidationMessages.LastNameRequired)]
+    [RegularExpression(@"^(?=.*[A-Za-z])[A-Za-z\s]+$", ErrorMessage = ValidationMessages.LastNameOnlyLetters)]
     public string Lastname { get; set; } = null!;
 
-    [Required(ErrorMessage = "Phone is required")]
+    [Required(ErrorMessage = RequiredValidationMessages.PhoneRequired)]
     [DataType(DataType.PhoneNumber)]
-    [RegularExpression(@"^[1-9]\d{9}$", ErrorMessage = "Phone number must be exactly 10 digits and cannot start with 0.")]
-    public string Phone { get; set; } = null!;
+    [RegularExpression(@"^[1-9]\d{9}$", ErrorMessage = ValidationMessages.ContactnumberFormat)]
+    public string Contactnumber { get; set; } = null!;
 
     public string? Address { get; set; }
 }

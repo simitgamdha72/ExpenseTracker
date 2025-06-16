@@ -1,4 +1,5 @@
 using ExpenseTracker.Models.Dto;
+using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
 using ExpenseTracker.Service.Interface;
 using ExpenseTracker.Service.Validations;
 using Microsoft.AspNetCore.Authorization;
@@ -28,7 +29,7 @@ public class ExpenseCategoriesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            return StatusCode(500, new { message = ErrorMessages.InternalServerError, detail = ex.Message });
         }
 
     }
@@ -42,14 +43,14 @@ public class ExpenseCategoriesController : ControllerBase
 
             if (expenseCategoryDto == null)
             {
-                return NotFound("Category not found");
+                return NotFound(ErrorMessages.CategoryNotFound);
             }
 
             return Ok(expenseCategoryDto);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            return StatusCode(500, new { message = ErrorMessages.InternalServerError, detail = ex.Message });
         }
 
     }
@@ -82,7 +83,7 @@ public class ExpenseCategoriesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            return StatusCode(500, new { message = ErrorMessages.InternalServerError, detail = ex.Message });
         }
 
     }
@@ -93,7 +94,7 @@ public class ExpenseCategoriesController : ControllerBase
     {
         if (id != expenseCategoryDto.Id)
         {
-            return BadRequest("Category ID mismatch");
+            return BadRequest(ErrorMessages.CategoryIdMismatch);
         }
 
         try
@@ -118,11 +119,11 @@ public class ExpenseCategoriesController : ControllerBase
         {
             if (ex.Message == "Exist")
             {
-                return Conflict("Category name already in use!");
+                return Conflict(ErrorMessages.CategoryNameExists);
             }
             else
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, new { message = ErrorMessages.InternalServerError, detail = ex.Message });
             }
 
 
@@ -146,7 +147,7 @@ public class ExpenseCategoriesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            return StatusCode(500, new { message = ErrorMessages.InternalServerError, detail = ex.Message });
         }
 
     }

@@ -1,5 +1,6 @@
 using ExpenseTracker.Models.Dto;
 using ExpenseTracker.Models.Models;
+using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
 using ExpenseTracker.Repository.Interface;
 using ExpenseTracker.Service.Interface;
 using ExpenseTracker.Service.Validations;
@@ -33,7 +34,7 @@ public class AuthService : IAuthService
     {
         if (await _userRepository.EmailOrUsernameExistsAsync(registerDto.Email, registerDto.Username))
         {
-            throw new Exception("Exist");
+            throw new Exception(ErrorMessages.EmailOrUsernameExists);
         }
 
         User user = new User
@@ -42,7 +43,7 @@ public class AuthService : IAuthService
             Email = registerDto.Email,
             Firstname = registerDto.Firstname,
             Lastname = registerDto.Lastname,
-            Phone = registerDto.Phone,
+            Contactnumber = registerDto.Contactnumber,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
             RoleId = registerDto.RoleId ?? 1,
             CreatedAt = DateTime.UtcNow,
