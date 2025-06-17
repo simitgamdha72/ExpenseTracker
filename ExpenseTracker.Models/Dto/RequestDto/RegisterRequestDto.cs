@@ -3,7 +3,7 @@ using ExpenseTracker.Models.Validations;
 
 namespace ExpenseTracker.Models.Dto;
 
-public class RegisterDto
+public class RegisterRequestDto
 {
     [Required(ErrorMessage = RequiredValidationMessages.UsernameRequired)]
     [RegularExpression(@"^\S+$", ErrorMessage = ValidationMessages.NoSpacesUsername)]

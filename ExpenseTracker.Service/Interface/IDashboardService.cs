@@ -5,7 +5,7 @@ namespace ExpenseTracker.Service.Interface;
 public interface IDashboardService
 {
 
-    public MemoryStream ExportExpensesToCsv(CsvExportFilterDto csvExportFilterDto);
+    public MemoryStream ExportExpensesToCsv(CsvExportFilterRequestDto csvExportFilterRequestDto);
 
-    public object GetExpenseSummary(CsvExportFilterDto csvExportFilterDto);
+    public object GetExpenseSummary(CsvExportFilterRequestDto csvExportFilterRequestDto);
 }

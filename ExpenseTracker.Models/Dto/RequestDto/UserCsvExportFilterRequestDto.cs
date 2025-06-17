@@ -1,9 +1,11 @@
+using ExpenseTracker.Models.Enums;
+
 namespace ExpenseTracker.Models.Dto;
 
-public class UserCsvExportFilterDto
+public class UserCsvExportFilterRequestDto
 {
-    public string ReportType { get; set; } = "monthly"; // "daily" or "monthly"
-    public string RangeType { get; set; } = "custom";   // "lastMonth", "last3Months", "custom"
+    public ReportType ReportType { get; set; }
+    public RangeType RangeType { get; set; }  // "lastMonth", "last3Months", "custom"
 
     public DateOnly? StartDate { get; set; }            // For daily
     public DateOnly? EndDate { get; set; }

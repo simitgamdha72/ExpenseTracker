@@ -17,6 +17,7 @@ namespace ExpenseTracker.Models.Validations.Constants.ErrorMessages
         public const string CategoryNotFound = "Category not found.";
         public const string CategoryNameExists = "Category name already in use!";
         public const string CategoryIdMismatch = "Category ID mismatch.";
+        public const string InvalidCategory = "Invalid category.";
         public const string UserNotFound = "User not found!";
         public const string ExpenseNotFound = "Expense not found.";
         public const string ExpenseIdMismatch = "Expense ID mismatch.";
@@ -29,6 +30,6 @@ namespace ExpenseTracker.Models.Validations.Constants.ErrorMessages
         public const string GetSummaryFailed = "An error occurred while retrieving expense summary.";
         public const string ExportCsvFailed = "An error occurred while exporting expenses.";
         public const string InternalServerError = "An Internal server error occurred. Please try again later.";
-
+        public const string NotFound = "Not found";
     }
 }

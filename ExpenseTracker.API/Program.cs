@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using ExpenseTracker.Models.Models;
 using ExpenseTracker.Repository.Implementation;
 using ExpenseTracker.Repository.Interface;
@@ -8,6 +9,8 @@ using ExpenseTracker.Service.Validations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,16 +28,11 @@ builder.Services.AddScoped<IExpensesService, ExpensesService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
-builder.Services.AddSwaggerGen(options =>
-{
-    options.MapType<DateOnly>(() => new Microsoft.OpenApi.Models.OpenApiSchema
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
     {
-        Type = "string",
-        Format = "date",
-        Example = new Microsoft.OpenApi.Any.OpenApiString("2025-06-01")
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
-});
-
 
 // JWT Authentication 
 builder.Services.AddAuthentication(options =>
@@ -66,34 +64,89 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
+// builder.Services.AddSwaggerGen(c =>
+// {
+//     c.SwaggerDoc("v1", new() { Title = "My API", Version = "v1" });
+
+//     c.MapType<DateOnly>(() => new OpenApiSchema
+//     {
+//         Type = "string",
+//         Format = "date",
+//         Example = new Microsoft.OpenApi.Any.OpenApiString("2025-06-01")
+//     });
+
+//     c.UseAllOfToExtendReferenceSchemas();
+
+//     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+//     {
+//         Description = "Enter 'Bearer' followed by your JWT token",
+//         Name = "Authorization",
+//         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+//         Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+//         Scheme = "Bearer"
+//     });
+
+//     c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+//     {
+//         {
+//             new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+//             {
+//                 Reference = new Microsoft.OpenApi.Models.OpenApiReference
+//                 {
+//                     Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+//                     Id = "Bearer"
+//                 }
+//             },
+//             new string[] {}
+//         }
+//     });
+// });
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "My API", Version = "v1" });
 
-    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    // ✅ Display enums as string in Swagger
+    c.SchemaGeneratorOptions = new SchemaGeneratorOptions
+    {
+        UseInlineDefinitionsForEnums = true,
+        SchemaFilters = { new EnumSchemaFilter() }
+    };
+
+    // ✅ Map DateOnly
+    c.MapType<DateOnly>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Format = "date",
+        Example = new Microsoft.OpenApi.Any.OpenApiString("2025-06-01")
+    });
+
+    // ✅ Security Definitions
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "Enter 'Bearer' followed by your JWT token",
         Name = "Authorization",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
 
-    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            new OpenApiSecurityScheme
             {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                Reference = new OpenApiReference
                 {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
                 }
             },
-            new string[] {}
+            Array.Empty<string>()
         }
     });
 });
+
 
 var app = builder.Build();
 

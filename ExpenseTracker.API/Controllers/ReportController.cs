@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using ExpenseTracker.Models.Dto;
+using ExpenseTracker.Models.Enums;
 using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
 using ExpenseTracker.Service.Interface;
 using Microsoft.AspNetCore.Authorization;
@@ -18,124 +19,142 @@ public class ReportController : ControllerBase
 
     [HttpGet("my-report-csv")]
     [Authorize(Roles = "User")]
-    public IActionResult ExportMyExpensesToCsv([FromQuery] UserCsvExportFilterDto filterDto)
+    public IActionResult ExportMyExpensesToCsv([FromQuery] UserCsvExportFilterRequestDto userCsvExportFilterRequestDto)
     {
-        if (!User.Identity!.IsAuthenticated)
+        try
         {
-            return NotFound(ErrorMessages.UserNotFound);
-        }
-
-        int? userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
-
-        if (userId == 0)
-        {
-            return NotFound();
-        }
-
-        var today = DateOnly.FromDateTime(DateTime.Today);
-
-        if (filterDto.ReportType == "daily")
-        {
-            if (filterDto.StartDate > today || filterDto.EndDate > today)
+            if (!User.Identity!.IsAuthenticated)
             {
-                return BadRequest(ErrorMessages.FutureDateNotAllowed);
+                return NotFound(ErrorMessages.UserNotFound);
             }
 
-            if (filterDto.StartDate > filterDto.EndDate)
+            int? userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+
+            if (userId == 0)
             {
-                return BadRequest(ErrorMessages.StartDateAfterEndDate);
+                return NotFound();
             }
-        }
 
-        if (filterDto.ReportType == "monthly" && filterDto.RangeType == "custom")
-        {
-            if (filterDto.StartMonth.HasValue && filterDto.StartYear.HasValue &&
-                filterDto.EndMonth.HasValue && filterDto.EndYear.HasValue)
+            DateOnly today = DateOnly.FromDateTime(DateTime.Today);
+
+            if (userCsvExportFilterRequestDto.ReportType == ReportType.Daily)
             {
-                var start = new DateOnly(filterDto.StartYear.Value, filterDto.StartMonth.Value, 1);
-                var end = new DateOnly(filterDto.EndYear.Value, filterDto.EndMonth.Value,
-                    DateTime.DaysInMonth(filterDto.EndYear.Value, filterDto.EndMonth.Value));
-
-                if (start > today || end > today)
+                if (userCsvExportFilterRequestDto.StartDate > today || userCsvExportFilterRequestDto.EndDate > today)
                 {
-                    return BadRequest(ErrorMessages.FutureMonthNotAllowed);
+                    return BadRequest(ErrorMessages.FutureDateNotAllowed);
                 }
 
-                if (start > end)
+                if (userCsvExportFilterRequestDto.StartDate > userCsvExportFilterRequestDto.EndDate)
                 {
-                    return BadRequest(ErrorMessages.FutureMonthNotAllowed);
+                    return BadRequest(ErrorMessages.StartDateAfterEndDate);
                 }
             }
-            else
-            {
-                return BadRequest(ErrorMessages.CustomMonthRangeRequired);
-            }
-        }
 
-        var fileStream = _reportService.ExportUserExpensesToCsv(userId ?? 0, filterDto);
-        return File(fileStream.ToArray(), "text/csv", "My_Expense_Report.csv");
+            if (userCsvExportFilterRequestDto.ReportType == ReportType.Monthly && userCsvExportFilterRequestDto.RangeType == RangeType.Custom)
+            {
+                if (userCsvExportFilterRequestDto.StartMonth.HasValue && userCsvExportFilterRequestDto.StartYear.HasValue &&
+                    userCsvExportFilterRequestDto.EndMonth.HasValue && userCsvExportFilterRequestDto.EndYear.HasValue)
+                {
+                    DateOnly start = new DateOnly(userCsvExportFilterRequestDto.StartYear.Value, userCsvExportFilterRequestDto.StartMonth.Value, 1);
+                    DateOnly end = new DateOnly(userCsvExportFilterRequestDto.EndYear.Value, userCsvExportFilterRequestDto.EndMonth.Value,
+                        DateTime.DaysInMonth(userCsvExportFilterRequestDto.EndYear.Value, userCsvExportFilterRequestDto.EndMonth.Value));
+
+                    if (start > today)
+                    {
+                        return BadRequest(ErrorMessages.FutureMonthNotAllowed);
+                    }
+                    if (end.Year > today.Year || (end.Year == today.Year && end.Month > today.Month))
+                    {
+                        return BadRequest(ErrorMessages.EndMonthInFuture);
+                    }
+
+                    if (start > end)
+                    {
+                        return BadRequest(ErrorMessages.FutureMonthNotAllowed);
+                    }
+                }
+                else
+                {
+                    return BadRequest(ErrorMessages.CustomMonthRangeRequired);
+                }
+            }
+
+            MemoryStream? fileStream = _reportService.ExportUserExpensesToCsv(userId ?? 0, userCsvExportFilterRequestDto);
+            return File(fileStream.ToArray(), "text/csv", "My_Expense_Report.csv");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = ErrorMessages.GetSummaryFailed, detail = ex.Message });
+        }
     }
 
     [HttpGet("my-summary")]
     [Authorize(Roles = "User")]
-    public IActionResult GetMyExpenseSummary([FromQuery] UserCsvExportFilterDto filterDto)
+    public IActionResult GetMyExpenseSummary([FromQuery] UserCsvExportFilterRequestDto userCsvExportFilterRequestDto)
     {
-        if (!User.Identity!.IsAuthenticated)
+        try
         {
-            return NotFound(ErrorMessages.UserNotFound);
-        }
-
-        int? userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
-
-        if (userId == 0)
-        {
-            return NotFound();
-        }
-
-        var today = DateOnly.FromDateTime(DateTime.Today);
-
-        if (filterDto.ReportType == "daily")
-        {
-            if (filterDto.StartDate > today || filterDto.EndDate > today)
+            if (!User.Identity!.IsAuthenticated)
             {
-                return BadRequest(ErrorMessages.FutureDateNotAllowed);
+                return NotFound(ErrorMessages.UserNotFound);
             }
 
-            if (filterDto.StartDate > filterDto.EndDate)
+            int? userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+
+            if (userId == 0)
             {
-                return BadRequest(ErrorMessages.StartDateAfterEndDate);
+                return NotFound();
             }
-        }
 
-        if (filterDto.ReportType == "monthly" && filterDto.RangeType == "custom")
-        {
-            if (filterDto.StartMonth.HasValue && filterDto.StartYear.HasValue &&
-                filterDto.EndMonth.HasValue && filterDto.EndYear.HasValue)
+            DateOnly today = DateOnly.FromDateTime(DateTime.Today);
+
+            if (userCsvExportFilterRequestDto.ReportType == ReportType.Daily)
             {
-                var start = new DateOnly(filterDto.StartYear.Value, filterDto.StartMonth.Value, 1);
-                var end = new DateOnly(filterDto.EndYear.Value, filterDto.EndMonth.Value,
-                    DateTime.DaysInMonth(filterDto.EndYear.Value, filterDto.EndMonth.Value));
-
-                if (start > today || end > today)
+                if (userCsvExportFilterRequestDto.StartDate > today || userCsvExportFilterRequestDto.EndDate > today)
                 {
-                    return BadRequest(ErrorMessages.FutureMonthNotAllowed);
+                    return BadRequest(ErrorMessages.FutureDateNotAllowed);
                 }
-                if (start > end)
+
+                if (userCsvExportFilterRequestDto.StartDate > userCsvExportFilterRequestDto.EndDate)
                 {
-                    return BadRequest(ErrorMessages.FutureMonthNotAllowed);
+                    return BadRequest(ErrorMessages.StartDateAfterEndDate);
                 }
             }
-            else
-            {
-                return BadRequest(ErrorMessages.CustomMonthRangeRequired);
-            }
-        }
 
-        var summary = _reportService.GetUserExpenseSummary(userId.Value, filterDto);
-        return Ok(summary);
+            if (userCsvExportFilterRequestDto.ReportType == ReportType.Monthly && userCsvExportFilterRequestDto.RangeType == RangeType.Custom)
+            {
+                if (userCsvExportFilterRequestDto.StartMonth.HasValue && userCsvExportFilterRequestDto.StartYear.HasValue &&
+                    userCsvExportFilterRequestDto.EndMonth.HasValue && userCsvExportFilterRequestDto.EndYear.HasValue)
+                {
+                    DateOnly start = new DateOnly(userCsvExportFilterRequestDto.StartYear.Value, userCsvExportFilterRequestDto.StartMonth.Value, 1);
+                    DateOnly end = new DateOnly(userCsvExportFilterRequestDto.EndYear.Value, userCsvExportFilterRequestDto.EndMonth.Value,
+                        DateTime.DaysInMonth(userCsvExportFilterRequestDto.EndYear.Value, userCsvExportFilterRequestDto.EndMonth.Value));
+
+                    if (start > today)
+                    {
+                        return BadRequest(ErrorMessages.FutureMonthNotAllowed);
+                    }
+                    if (end.Year > today.Year || (end.Year == today.Year && end.Month > today.Month))
+                    {
+                        return BadRequest(ErrorMessages.EndMonthInFuture);
+                    }
+                    if (start > end)
+                    {
+                        return BadRequest(ErrorMessages.FutureMonthNotAllowed);
+                    }
+                }
+                else
+                {
+                    return BadRequest(ErrorMessages.CustomMonthRangeRequired);
+                }
+            }
+
+            var summary = _reportService.GetUserExpenseSummary(userId.Value, userCsvExportFilterRequestDto);
+            return Ok(summary);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = ErrorMessages.GetSummaryFailed, detail = ex.Message });
+        }
     }
-
-
-
-
 }

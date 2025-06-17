@@ -1,6 +1,7 @@
 using ExpenseTracker.Models.Dto;
 using ExpenseTracker.Models.Models;
 using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
+using ExpenseTracker.Models.Validations.Constants.SuccessMessages;
 using ExpenseTracker.Repository.Interface;
 using ExpenseTracker.Service.Interface;
 using ExpenseTracker.Service.Validations;
@@ -18,11 +19,11 @@ public class AuthService : IAuthService
         _jwt = jwt;
     }
 
-    public async Task<string?> LoginAsync(LoginDto loginDto)
+    public async Task<string?> LoginAsync(LoginRequestDto loginRequestDto)
     {
-        User? user = await _userRepository.GetByEmailAsync(loginDto.Email);
+        User? user = await _userRepository.GetByEmailAsync(loginRequestDto.Email);
 
-        if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
+        if (user == null || !BCrypt.Net.BCrypt.Verify(loginRequestDto.Password, user.PasswordHash))
         {
             return null;
         }
@@ -30,30 +31,30 @@ public class AuthService : IAuthService
         return _jwt.GenerateToken(user);
     }
 
-    public async Task<string> RegisterAsync(RegisterDto registerDto)
+    public async Task<string> RegisterAsync(RegisterRequestDto registerRequestDto)
     {
-        if (await _userRepository.EmailOrUsernameExistsAsync(registerDto.Email, registerDto.Username))
+        if (await _userRepository.EmailOrUsernameExistsAsync(registerRequestDto.Email, registerRequestDto.Username))
         {
             throw new Exception(ErrorMessages.EmailOrUsernameExists);
         }
 
         User user = new User
         {
-            Username = registerDto.Username,
-            Email = registerDto.Email,
-            Firstname = registerDto.Firstname,
-            Lastname = registerDto.Lastname,
-            Contactnumber = registerDto.Contactnumber,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
-            RoleId = registerDto.RoleId ?? 1,
+            Username = registerRequestDto.Username,
+            Email = registerRequestDto.Email,
+            Firstname = registerRequestDto.Firstname,
+            Lastname = registerRequestDto.Lastname,
+            Contactnumber = registerRequestDto.Contactnumber,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerRequestDto.Password),
+            RoleId = registerRequestDto.RoleId ?? 1,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
-            Address = registerDto.Address,
+            Address = registerRequestDto.Address,
         };
 
         await _userRepository.AddAsync(user);
         await _userRepository.SaveChangesAsync();
 
-        return "User registered successfully";
+        return SuccessMessages.UserRegistered;
     }
 }

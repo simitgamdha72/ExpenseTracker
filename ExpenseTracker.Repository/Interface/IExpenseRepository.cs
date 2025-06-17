@@ -7,7 +7,7 @@ public interface IExpenseRepository : IRepository<Expense>
 {
     Task<IEnumerable<Expense>> GetAllExpense();
 
-    IEnumerable<Expense> GetFilteredExpenses(CsvExportFilterDto filter);
+    IEnumerable<Expense> GetFilteredExpenses(CsvExportFilterRequestDto csvExportFilterRequestDto);
 
-    IEnumerable<Expense> GetFilteredUserExpenses(int userId, UserCsvExportFilterDto filter);
+    IEnumerable<Expense> GetFilteredUserExpenses(int userId, UserCsvExportFilterRequestDto userCsvExportFilterRequestDto);
 }

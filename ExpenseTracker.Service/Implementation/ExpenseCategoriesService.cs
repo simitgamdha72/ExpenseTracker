@@ -1,5 +1,7 @@
 using ExpenseTracker.Models.Dto;
 using ExpenseTracker.Models.Models;
+using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
+using ExpenseTracker.Models.Validations.Constants.SuccessMessages;
 using ExpenseTracker.Repository.Interface;
 using ExpenseTracker.Service.Interface;
 
@@ -47,7 +49,7 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
     {
         if (await _expenseCategoryRepository.ExistsByNameAsync(expenseCategoryDto.Name))
         {
-            return (false, "Category already exists", null);
+            return (false, ErrorMessages.CategoryNameExists, null);
         }
 
         ExpenseCategory category = new ExpenseCategory
@@ -60,7 +62,7 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
 
         await _expenseCategoryRepository.AddAsync(category);
         await _expenseCategoryRepository.SaveChangesAsync();
-        return (true, "Created", category);
+        return (true, SuccessMessages.Created, category);
     }
 
     public async Task<(bool, string, ExpenseCategory?)> UpdateCategoryAsync(int id, ExpenseCategoryDto expenseCategoryDto)
@@ -69,12 +71,12 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
 
         if (category == null)
         {
-            return (false, "Not found", null);
+            return (false, ErrorMessages.NotFound, null);
         }
 
         if (await _expenseCategoryRepository.ExistsByNameExceptIdAsync(expenseCategoryDto.Name, id))
         {
-            throw new Exception("Exist");
+            throw new Exception(ErrorMessages.CategoryNameExists);
         }
 
         category.Name = expenseCategoryDto.Name;
@@ -82,7 +84,7 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
         category.UpdatedAt = DateTime.UtcNow;
 
         await _expenseCategoryRepository.SaveChangesAsync();
-        return (true, "Updated", category);
+        return (true, SuccessMessages.Updated, category);
     }
 
     public async Task<(bool, string)> DeleteCategoryAsync(int id)
@@ -91,11 +93,11 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
 
         if (category == null)
         {
-            return (false, "Category not found");
+            return (false, ErrorMessages.CategoryNotFound);
         }
 
         _expenseCategoryRepository.Delete(category);
         await _expenseCategoryRepository.SaveChangesAsync();
-        return (true, "Category Deleted Successfully!");
+        return (true, SuccessMessages.CategoryDeleted);
     }
 }

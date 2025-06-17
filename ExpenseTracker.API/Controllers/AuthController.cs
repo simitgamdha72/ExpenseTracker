@@ -1,3 +1,4 @@
+using System.Net;
 using ExpenseTracker.Models.Dto;
 using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
 using ExpenseTracker.Service.Interface;
@@ -19,7 +20,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register")]
     [Trim]
-    public async Task<IActionResult> Register(RegisterDto registerDto)
+    public async Task<IActionResult> Register(RegisterRequestDto registerRequestDto)
     {
         try
         {
@@ -28,7 +29,7 @@ public class AuthController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            string message = await _authService.RegisterAsync(registerDto);
+            string message = await _authService.RegisterAsync(registerRequestDto);
 
             return Ok(new { message });
         }
@@ -50,7 +51,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("login")]
     [Trim]
-    public async Task<IActionResult> Login(LoginDto loginDto)
+    public async Task<IActionResult> Login(LoginRequestDto loginRequestDto)
     {
         try
         {
@@ -59,7 +60,7 @@ public class AuthController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            string? token = await _authService.LoginAsync(loginDto);
+            string? token = await _authService.LoginAsync(loginRequestDto);
 
             if (token == null)
             {

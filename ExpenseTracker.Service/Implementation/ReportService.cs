@@ -1,5 +1,6 @@
 using System.Text;
 using ExpenseTracker.Models.Dto;
+using ExpenseTracker.Models.Enums;
 using ExpenseTracker.Models.Models;
 using ExpenseTracker.Repository.Interface;
 using ExpenseTracker.Service.Interface;
@@ -16,14 +17,14 @@ public class ReportService : IReportService
         _expenseRepository = expenseRepository;
     }
 
-    public MemoryStream ExportUserExpensesToCsv(int userId, UserCsvExportFilterDto filter)
+    public MemoryStream ExportUserExpensesToCsv(int userId, UserCsvExportFilterRequestDto userCsvExportFilterRequestDto)
     {
-        var expenses = _expenseRepository.GetFilteredUserExpenses(userId, filter);
+        IEnumerable<Expense>? expenses = _expenseRepository.GetFilteredUserExpenses(userId, userCsvExportFilterRequestDto);
 
-        var csv = new StringBuilder();
+        StringBuilder? csv = new StringBuilder();
         csv.AppendLine("Date,Category,Amount,Note");
 
-        var categoryTotals = new Dictionary<string, decimal>();
+        Dictionary<string, decimal>? categoryTotals = new Dictionary<string, decimal>();
         decimal total = 0;
 
         foreach (var e in expenses)
@@ -51,13 +52,13 @@ public class ReportService : IReportService
         return new MemoryStream(Encoding.UTF8.GetBytes(csv.ToString()));
     }
 
-    public object GetUserExpenseSummary(int userId, UserCsvExportFilterDto filter)
+    public object GetUserExpenseSummary(int userId, UserCsvExportFilterRequestDto userCsvExportFilterRequestDto)
     {
-        var expenses = _expenseRepository.GetFilteredUserExpenses(userId, filter);
-        var categoryTotals = new Dictionary<string, decimal>();
+        IEnumerable<Expense>? expenses = _expenseRepository.GetFilteredUserExpenses(userId, userCsvExportFilterRequestDto);
+        Dictionary<string, decimal>? categoryTotals = new Dictionary<string, decimal>();
         decimal total = 0;
 
-        bool isMonthly = filter.ReportType.ToLower() == "monthly";
+        bool isMonthly = userCsvExportFilterRequestDto.ReportType == ReportType.Monthly;
         List<object> expenseList = new();
 
         foreach (var e in expenses)
@@ -90,9 +91,5 @@ public class ReportService : IReportService
             TotalExpense = total
         };
     }
-
-
-
-
 
 }

@@ -1,5 +1,7 @@
 using ExpenseTracker.Models.Dto;
 using ExpenseTracker.Models.Models;
+using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
+using ExpenseTracker.Models.Validations.Constants.SuccessMessages;
 using ExpenseTracker.Repository.Interface;
 using ExpenseTracker.Service.Interface;
 
@@ -63,7 +65,7 @@ public class ExpensesService : IExpensesService
     {
         if (!await _expenseCategoryRepository.ExistsByNameAsync(expenseDto.Category ?? ""))
         {
-            return (false, "Invalid category");
+            return (false, ErrorMessages.InvalidCategory);
         }
 
         ExpenseCategory? Category = await _expenseCategoryRepository.GetCategoryByNameAsync(expenseDto.Category ?? "");
@@ -81,7 +83,7 @@ public class ExpensesService : IExpensesService
 
         await _expenseRepository.AddAsync(expense);
         await _expenseRepository.SaveChangesAsync();
-        return (true, "Expense created");
+        return (true, SuccessMessages.ExpenseCreated);
     }
 
     public async Task<(bool Success, string Message)> UpdateExpenseAsync(int id, int? userId, ExpenseDto expenseDto)
@@ -90,12 +92,12 @@ public class ExpensesService : IExpensesService
 
         if (expense == null || expense.UserId != userId)
         {
-            return (false, "Expense not found");
+            return (false, ErrorMessages.ExpenseNotFound);
         }
 
         if (!await _expenseCategoryRepository.ExistsByNameAsync(expenseDto.Category ?? ""))
         {
-            return (false, "Invalid category");
+            return (false, ErrorMessages.InvalidCategory);
         }
 
         ExpenseCategory? Category = await _expenseCategoryRepository.GetCategoryByNameAsync(expenseDto.Category ?? "");
@@ -109,7 +111,7 @@ public class ExpensesService : IExpensesService
         _expenseRepository.Update(expense);
         await _expenseRepository.SaveChangesAsync();
 
-        return (true, "Expense updated");
+        return (true, SuccessMessages.ExpenseUpdated);
     }
 
     public async Task<(bool Success, string Message)> DeleteExpenseAsync(int id, int? userId)
@@ -118,12 +120,12 @@ public class ExpensesService : IExpensesService
 
         if (expense == null || expense.UserId != userId)
         {
-            return (false, "Expense not found");
+            return (false, ErrorMessages.ExpenseNotFound);
         }
 
         _expenseRepository.Delete(expense);
         await _expenseRepository.SaveChangesAsync();
-        return (true, "Expense deleted");
+        return (true, SuccessMessages.ExpenseDeleted);
     }
 
     public async Task<FilteredExpenseReportDto> GetAllUsersExpensesAsync(List<string>? userNames = null)

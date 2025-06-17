@@ -3,7 +3,7 @@ using ExpenseTracker.Models.Validations;
 
 namespace ExpenseTracker.Models.Dto;
 
-public class LoginDto
+public class LoginRequestDto
 {
 
     [Required(ErrorMessage = RequiredValidationMessages.EmailRequired)]

@@ -62,17 +62,12 @@ public class ExpenseCategoriesController : ControllerBase
         try
         {
 
-            // if (expenseCategoryDto == null)
-            // {
-            //     return BadRequest("ExpenseCategoryDto cannot be null.");
-            // }
-
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var result = await _expenseCategoriesService.CreateCategoryAsync(expenseCategoryDto);
+            (bool Success, string Message, Models.Models.ExpenseCategory? Category) result = await _expenseCategoriesService.CreateCategoryAsync(expenseCategoryDto);
 
             if (!result.Success)
             {
@@ -105,7 +100,7 @@ public class ExpenseCategoriesController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            var result = await _expenseCategoriesService.UpdateCategoryAsync(id, expenseCategoryDto);
+            (bool Success, string Message, Models.Models.ExpenseCategory? Category) result = await _expenseCategoriesService.UpdateCategoryAsync(id, expenseCategoryDto);
 
             if (!result.Success)
             {
@@ -117,7 +112,7 @@ public class ExpenseCategoriesController : ControllerBase
         }
         catch (Exception ex)
         {
-            if (ex.Message == "Exist")
+            if (ex.Message == ErrorMessages.CategoryNameExists)
             {
                 return Conflict(ErrorMessages.CategoryNameExists);
             }
@@ -136,7 +131,7 @@ public class ExpenseCategoriesController : ControllerBase
     {
         try
         {
-            var result = await _expenseCategoriesService.DeleteCategoryAsync(id);
+            (bool Success, string Message) result = await _expenseCategoriesService.DeleteCategoryAsync(id);
 
             if (!result.Success)
             {

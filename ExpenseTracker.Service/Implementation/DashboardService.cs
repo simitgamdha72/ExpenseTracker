@@ -1,5 +1,6 @@
 using System.Text;
 using ExpenseTracker.Models.Dto;
+using ExpenseTracker.Models.Enums;
 using ExpenseTracker.Models.Models;
 using ExpenseTracker.Repository.Interface;
 using ExpenseTracker.Service.Interface;
@@ -16,15 +17,15 @@ public class DashboardService : IDashboardService
         _expenseRepository = expenseRepository;
     }
 
-    public object GetExpenseSummary(CsvExportFilterDto csvExportFilterDto)
+    public object GetExpenseSummary(CsvExportFilterRequestDto csvExportFilterRequestDto)
     {
-        IEnumerable<Expense>? expenses = _expenseRepository.GetFilteredExpenses(csvExportFilterDto);
+        IEnumerable<Expense>? expenses = _expenseRepository.GetFilteredExpenses(csvExportFilterRequestDto);
 
         Dictionary<string, decimal> categoryTotals = new Dictionary<string, decimal>();
         decimal totalExpense = 0;
 
         List<object> expenseList = new();
-        bool isMonthly = csvExportFilterDto.ReportType.ToLower() == "monthly";
+        bool isMonthly = csvExportFilterRequestDto.ReportType == ReportType.Monthly;
 
         foreach (var exp in expenses)
         {
@@ -59,13 +60,13 @@ public class DashboardService : IDashboardService
     }
 
 
-    public MemoryStream ExportExpensesToCsv(CsvExportFilterDto csvExportFilterDto)
+    public MemoryStream ExportExpensesToCsv(CsvExportFilterRequestDto csvExportFilterRequestDto)
     {
-        IEnumerable<Expense>? expenses = _expenseRepository.GetFilteredExpenses(csvExportFilterDto);
+        IEnumerable<Expense>? expenses = _expenseRepository.GetFilteredExpenses(csvExportFilterRequestDto);
 
         StringBuilder? csv = new StringBuilder();
 
-        bool isMonthly = csvExportFilterDto.ReportType.ToLower() == "monthly";
+        bool isMonthly = csvExportFilterRequestDto.ReportType == ReportType.Monthly;
 
         csv.AppendLine(isMonthly ? "Username,Month,Category,Amount,Note" : "Username,Date,Category,Amount,Note");
 

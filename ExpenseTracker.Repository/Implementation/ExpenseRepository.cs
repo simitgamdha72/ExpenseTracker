@@ -1,4 +1,5 @@
 using ExpenseTracker.Models.Dto;
+using ExpenseTracker.Models.Enums;
 using ExpenseTracker.Models.Models;
 using ExpenseTracker.Repository.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -22,44 +23,57 @@ public class ExpenseRepository : Repository<Expense>, IExpenseRepository
             .ToListAsync();
     }
 
-    public IEnumerable<Expense> GetFilteredExpenses(CsvExportFilterDto filter)
+    public IEnumerable<Expense> GetFilteredExpenses(CsvExportFilterRequestDto csvExportFilterRequestDto)
     {
-        var expenses = _context.Expenses
+        IQueryable<Expense>? expenses = _context.Expenses
             .Include(e => e.User)
             .Include(e => e.Category)
             .AsQueryable();
 
-        if (!string.IsNullOrEmpty(filter.Username))
-            expenses = expenses.Where(e => e.User!.Username == filter.Username);
+        if (!string.IsNullOrEmpty(csvExportFilterRequestDto.Username))
+            expenses = expenses.Where(e => e.User!.Username.ToLower().Contains(csvExportFilterRequestDto.Username));
 
-        if (!string.IsNullOrEmpty(filter.Category))
-            expenses = expenses.Where(e => e.Category!.Name == filter.Category);
+        if (!string.IsNullOrEmpty(csvExportFilterRequestDto.Category))
+            expenses = expenses.Where(e => e.Category!.Name.ToLower().Contains(csvExportFilterRequestDto.Category));
 
-        if (filter.ReportType == "daily" && filter.StartDate.HasValue && filter.EndDate.HasValue)
-            expenses = expenses.Where(e => e.ExpenseDate >= filter.StartDate && e.ExpenseDate <= filter.EndDate);
 
-        if (filter.ReportType == "monthly")
+        if (csvExportFilterRequestDto.ReportType == ReportType.Daily && csvExportFilterRequestDto.StartDate.HasValue && csvExportFilterRequestDto.EndDate.HasValue)
+            expenses = expenses.Where(e => e.ExpenseDate >= csvExportFilterRequestDto.StartDate && e.ExpenseDate <= csvExportFilterRequestDto.EndDate);
+
+        if (csvExportFilterRequestDto.ReportType == ReportType.Monthly)
         {
             DateOnly from, to;
-            if (filter.RangeType == "lastMonth")
+            if (csvExportFilterRequestDto.RangeType == RangeType.LastMonth)
             {
-                var date = DateTime.Today.AddMonths(-1);
+                DateTime date = DateTime.Today.AddMonths(-1);
                 from = new DateOnly(date.Year, date.Month, 1);
                 to = new DateOnly(date.Year, date.Month, DateTime.DaysInMonth(date.Year, date.Month));
             }
-            else if (filter.RangeType == "last3Months")
+            else if (csvExportFilterRequestDto.RangeType == RangeType.Last3Months)
             {
-                var start = DateTime.Today.AddMonths(-3);
+                DateTime start = DateTime.Today.AddMonths(-3);
                 from = new DateOnly(start.Year, start.Month, 1);
-                var end = DateTime.Today;
+                DateTime end = DateTime.Today;
                 to = new DateOnly(end.Year, end.Month, DateTime.DaysInMonth(end.Year, end.Month));
             }
             else // custom
             {
-                if (filter.StartMonth.HasValue && filter.StartYear.HasValue && filter.EndMonth.HasValue && filter.EndYear.HasValue)
+                if (csvExportFilterRequestDto.StartMonth.HasValue && csvExportFilterRequestDto.StartYear.HasValue && csvExportFilterRequestDto.EndMonth.HasValue && csvExportFilterRequestDto.EndYear.HasValue)
                 {
-                    from = new DateOnly(filter.StartYear.Value, filter.StartMonth.Value, 1);
-                    to = new DateOnly(filter.EndYear.Value, filter.EndMonth.Value, DateTime.DaysInMonth(filter.EndYear.Value, filter.EndMonth.Value));
+                    from = new DateOnly(csvExportFilterRequestDto.StartYear.Value, csvExportFilterRequestDto.StartMonth.Value, 1);
+
+                    DateOnly end = new DateOnly(csvExportFilterRequestDto.EndYear.Value, csvExportFilterRequestDto.EndMonth.Value,
+                        DateTime.DaysInMonth(csvExportFilterRequestDto.EndYear.Value, csvExportFilterRequestDto.EndMonth.Value));
+
+                    if (csvExportFilterRequestDto.EndYear.Value == DateTime.Today.Year &&
+                        csvExportFilterRequestDto.EndMonth.Value == DateTime.Today.Month)
+                    {
+                        to = DateOnly.FromDateTime(DateTime.Today);
+                    }
+                    else
+                    {
+                        to = end;
+                    }
                 }
                 else
                 {
@@ -74,37 +88,57 @@ public class ExpenseRepository : Repository<Expense>, IExpenseRepository
         return expenses.ToList();
     }
 
-    public IEnumerable<Expense> GetFilteredUserExpenses(int userId, UserCsvExportFilterDto filter)
+    public IEnumerable<Expense> GetFilteredUserExpenses(int userId, UserCsvExportFilterRequestDto userCsvExportFilterRequestDto)
     {
-        var expenses = _context.Expenses
+        IQueryable<Expense>? expenses = _context.Expenses
             .Include(e => e.Category)
             .Where(e => e.UserId == userId)
             .AsQueryable();
 
-        if (filter.ReportType == "daily" && filter.StartDate.HasValue && filter.EndDate.HasValue)
+        if (userCsvExportFilterRequestDto.ReportType == ReportType.Daily && userCsvExportFilterRequestDto.StartDate.HasValue && userCsvExportFilterRequestDto.EndDate.HasValue)
         {
-            expenses = expenses.Where(e => e.ExpenseDate >= filter.StartDate && e.ExpenseDate <= filter.EndDate);
+            expenses = expenses.Where(e => e.ExpenseDate >= userCsvExportFilterRequestDto.StartDate && e.ExpenseDate <= userCsvExportFilterRequestDto.EndDate);
         }
-        else if (filter.ReportType == "monthly")
+        else if (userCsvExportFilterRequestDto.ReportType == ReportType.Monthly)
         {
             DateOnly from, to;
-            if (filter.RangeType == "lastMonth")
+            if (userCsvExportFilterRequestDto.RangeType == RangeType.LastMonth)
             {
-                var d = DateTime.Today.AddMonths(-1);
+                DateTime d = DateTime.Today.AddMonths(-1);
                 from = new DateOnly(d.Year, d.Month, 1);
                 to = new DateOnly(d.Year, d.Month, DateTime.DaysInMonth(d.Year, d.Month));
             }
-            else if (filter.RangeType == "last3Months")
+            else if (userCsvExportFilterRequestDto.RangeType == RangeType.Last3Months)
             {
-                var s = DateTime.Today.AddMonths(-3);
+                DateTime s = DateTime.Today.AddMonths(-3);
                 from = new DateOnly(s.Year, s.Month, 1);
-                var e = DateTime.Today;
+                DateTime e = DateTime.Today;
                 to = new DateOnly(e.Year, e.Month, DateTime.DaysInMonth(e.Year, e.Month));
             }
             else // custom
             {
-                from = new DateOnly(filter.StartYear!.Value, filter.StartMonth!.Value, 1);
-                to = new DateOnly(filter.EndYear!.Value, filter.EndMonth!.Value, DateTime.DaysInMonth(filter.EndYear.Value, filter.EndMonth.Value));
+                if (userCsvExportFilterRequestDto.StartMonth.HasValue && userCsvExportFilterRequestDto.StartYear.HasValue && userCsvExportFilterRequestDto.EndMonth.HasValue && userCsvExportFilterRequestDto.EndYear.HasValue)
+                {
+                    from = new DateOnly(userCsvExportFilterRequestDto.StartYear.Value, userCsvExportFilterRequestDto.StartMonth.Value, 1);
+
+                    DateOnly end = new DateOnly(userCsvExportFilterRequestDto.EndYear.Value, userCsvExportFilterRequestDto.EndMonth.Value,
+                        DateTime.DaysInMonth(userCsvExportFilterRequestDto.EndYear.Value, userCsvExportFilterRequestDto.EndMonth.Value));
+
+                    if (userCsvExportFilterRequestDto.EndYear.Value == DateTime.Today.Year &&
+                        userCsvExportFilterRequestDto.EndMonth.Value == DateTime.Today.Month)
+                    {
+                        to = DateOnly.FromDateTime(DateTime.Today);
+                    }
+                    else
+                    {
+                        to = end;
+                    }
+                }
+                else
+                {
+                    from = DateOnly.MinValue;
+                    to = DateOnly.MaxValue;
+                }
             }
 
             expenses = expenses.Where(e => e.ExpenseDate >= from && e.ExpenseDate <= to);
