@@ -19,6 +19,8 @@ public partial class ExpenseTrackerContext : DbContext
 
     public virtual DbSet<ExpenseCategory> ExpenseCategories { get; set; }
 
+    public virtual DbSet<ExpenseReport> ExpenseReports { get; set; }
+
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
@@ -78,6 +80,23 @@ public partial class ExpenseTrackerContext : DbContext
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("updated_at");
+        });
+
+        modelBuilder.Entity<ExpenseReport>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("expense_reports_pkey");
+
+            entity.ToTable("expense_reports");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.User).WithMany(p => p.ExpenseReports)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("fk_expense_reports_user");
         });
 
         modelBuilder.Entity<Role>(entity =>

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Claims;
 using ExpenseTracker.Models.Dto;
 using ExpenseTracker.Models.Enums;
 using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
@@ -132,11 +133,39 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("export-csv")]
-    [Authorize(Roles = "Admin")]
+    // [Authorize(Roles = "Admin")]
     public IActionResult ExportExpensesToCsv([FromQuery] CsvExportFilterRequestDto csvExportFilterRequestDto)
     {
         try
         {
+            if (!User.Identity!.IsAuthenticated)
+            {
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.UnauthorizedAccess,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { ErrorMessages.UserNotFound }
+                };
+                return NotFound(responseError);
+            }
+
+            int? userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+
+            if (userId == 0)
+            {
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.UnauthorizedAccess,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { ErrorMessages.UserNotFound }
+                };
+                return NotFound(responseError);
+            }
+
             DateOnly today = DateOnly.FromDateTime(DateTime.Today);
 
             if (csvExportFilterRequestDto.ReportType == ReportType.Daily)
@@ -214,7 +243,7 @@ public class DashboardController : ControllerBase
 
             }
 
-            MemoryStream fileStream = _dashboardService.ExportExpensesToCsv(csvExportFilterRequestDto);
+            MemoryStream fileStream = _dashboardService.ExportExpensesToCsv(csvExportFilterRequestDto, userId);
             return File(fileStream.ToArray(), "text/csv", "Expense_Report.csv");
         }
         catch (Exception ex)

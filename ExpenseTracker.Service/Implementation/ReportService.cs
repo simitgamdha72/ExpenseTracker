@@ -11,10 +11,12 @@ public class ReportService : IReportService
 {
 
     private readonly IExpenseRepository _expenseRepository;
+    private readonly IExpenseReportRepository _expenseReportRepository;
 
-    public ReportService(IExpenseRepository expenseRepository)
+    public ReportService(IExpenseRepository expenseRepository, IExpenseReportRepository expenseReportRepository)
     {
         _expenseRepository = expenseRepository;
+        _expenseReportRepository = expenseReportRepository;
     }
 
     public MemoryStream ExportUserExpensesToCsv(int userId, UserCsvExportFilterRequestDto userCsvExportFilterRequestDto)
@@ -48,6 +50,14 @@ public class ReportService : IReportService
 
         csv.AppendLine();
         csv.AppendLine($"Total Expense:,{total}");
+
+        ExpenseReport expenseReport = new ExpenseReport
+        {
+            UserId = userId,
+        };
+
+        _expenseReportRepository.AddAsync(expenseReport);
+        _expenseReportRepository.SaveChangesAsync();
 
         return new MemoryStream(Encoding.UTF8.GetBytes(csv.ToString()));
     }

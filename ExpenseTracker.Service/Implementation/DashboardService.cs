@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using ExpenseTracker.Models.Dto;
 using ExpenseTracker.Models.Enums;
@@ -11,10 +12,12 @@ public class DashboardService : IDashboardService
 {
 
     private readonly IExpenseRepository _expenseRepository;
+    private readonly IExpenseReportRepository _expenseReportRepository;
 
-    public DashboardService(IExpenseRepository expenseRepository)
+    public DashboardService(IExpenseRepository expenseRepository, IExpenseReportRepository expenseReportRepository)
     {
         _expenseRepository = expenseRepository;
+        _expenseReportRepository = expenseReportRepository;
     }
 
     public object GetExpenseSummary(CsvExportFilterRequestDto csvExportFilterRequestDto)
@@ -60,7 +63,7 @@ public class DashboardService : IDashboardService
     }
 
 
-    public MemoryStream ExportExpensesToCsv(CsvExportFilterRequestDto csvExportFilterRequestDto)
+    public MemoryStream ExportExpensesToCsv(CsvExportFilterRequestDto csvExportFilterRequestDto, int? userId)
     {
         IEnumerable<Expense>? expenses = _expenseRepository.GetFilteredExpenses(csvExportFilterRequestDto);
 
@@ -102,6 +105,16 @@ public class DashboardService : IDashboardService
         csv.AppendLine($"Total Expense:,{totalExpense}");
 
         MemoryStream? stream = new MemoryStream(Encoding.UTF8.GetBytes(csv.ToString()));
+
+
+        ExpenseReport expenseReport = new ExpenseReport
+        {
+            UserId = userId ?? 0,
+        };
+
+        _expenseReportRepository.AddAsync(expenseReport);
+        _expenseReportRepository.SaveChangesAsync();
+
         return stream;
     }
 

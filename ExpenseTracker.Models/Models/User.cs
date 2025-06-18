@@ -27,6 +27,8 @@ public partial class User
 
     public string? Address { get; set; }
 
+    public virtual ICollection<ExpenseReport> ExpenseReports { get; set; } = new List<ExpenseReport>();
+
     public virtual ICollection<Expense> Expenses { get; set; } = new List<Expense>();
 
     public virtual Role Role { get; set; } = null!;
