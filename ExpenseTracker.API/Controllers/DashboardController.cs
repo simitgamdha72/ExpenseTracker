@@ -1,6 +1,8 @@
+using System.Net;
 using ExpenseTracker.Models.Dto;
 using ExpenseTracker.Models.Enums;
 using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
+using ExpenseTracker.Models.Validations.Constants.SuccessMessages;
 using ExpenseTracker.Service.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,30 +24,50 @@ public class DashboardController : ControllerBase
     {
         try
         {
+
             DateOnly today = DateOnly.FromDateTime(DateTime.Today);
             DateOnly currentMonthStart = new DateOnly(today.Year, today.Month, 1);
 
             if (csvExportFilterRequestDto.ReportType == ReportType.Daily)
             {
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.InvalidCredentials,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.BadRequest,
+                    Data = null,
+                };
+
                 if (csvExportFilterRequestDto.StartDate.HasValue && csvExportFilterRequestDto.StartDate > today)
                 {
-                    return BadRequest(ErrorMessages.StartDateInFuture);
+                    responseError.Errors = new[] { ErrorMessages.StartDateInFuture };
+                    return BadRequest(responseError);
                 }
 
                 if (csvExportFilterRequestDto.EndDate.HasValue && csvExportFilterRequestDto.EndDate > today)
                 {
-                    return BadRequest(ErrorMessages.EndDateInFuture);
+                    responseError.Errors = new[] { ErrorMessages.EndDateInFuture };
+                    return BadRequest(responseError);
                 }
 
                 if (csvExportFilterRequestDto.StartDate.HasValue && csvExportFilterRequestDto.EndDate.HasValue &&
                         csvExportFilterRequestDto.StartDate > csvExportFilterRequestDto.EndDate)
                 {
-                    return BadRequest(ErrorMessages.StartDateAfterEndDate);
+                    responseError.Errors = new[] { ErrorMessages.StartDateAfterEndDate };
+                    return BadRequest(responseError);
                 }
             }
 
             if (csvExportFilterRequestDto.ReportType == ReportType.Monthly && csvExportFilterRequestDto.RangeType == RangeType.Custom)
             {
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.InvalidCredentials,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.BadRequest,
+                    Data = null,
+                };
+
                 bool startValid = csvExportFilterRequestDto.StartMonth.HasValue && csvExportFilterRequestDto.StartYear.HasValue;
                 bool endValid = csvExportFilterRequestDto.EndMonth.HasValue && csvExportFilterRequestDto.EndYear.HasValue;
 
@@ -58,32 +80,54 @@ public class DashboardController : ControllerBase
 
                     if (start > today)
                     {
-                        return BadRequest(ErrorMessages.StartMonthInFuture);
+                        responseError.Errors = new[] { ErrorMessages.StartMonthInFuture };
+                        return BadRequest(responseError);
                     }
 
                     if (end.Year > today.Year || (end.Year == today.Year && end.Month > today.Month))
                     {
-                        return BadRequest(ErrorMessages.EndMonthInFuture);
+                        responseError.Errors = new[] { ErrorMessages.EndMonthInFuture };
+                        return BadRequest(responseError);
+
                     }
 
                     if (start > end)
                     {
-                        return BadRequest(ErrorMessages.StartMonthAfterEndMonth);
+                        responseError.Errors = new[] { ErrorMessages.StartMonthAfterEndMonth };
+                        return BadRequest(responseError);
                     }
                 }
                 else
                 {
-                    return BadRequest(ErrorMessages.CustomMonthRangeRequired);
+                    responseError.Errors = new[] { ErrorMessages.CustomMonthRangeRequired };
+                    return BadRequest(responseError);
                 }
 
             }
 
             var summary = _dashboardService.GetExpenseSummary(csvExportFilterRequestDto);
-            return Ok(summary);
+
+            Response<object> response = new Response<object>
+            {
+                Message = SuccessMessages.SummaryDataFetched,
+                Succeeded = true,
+                StatusCode = (int)HttpStatusCode.OK,
+                Data = summary
+            };
+            return Ok(response);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = ErrorMessages.GetSummaryFailed, detail = ex.Message });
+            Response<object> response = new Response<object>
+            {
+                Message = ErrorMessages.GetSummaryFailed,
+                Succeeded = false,
+                StatusCode = (int)HttpStatusCode.BadRequest,
+                Data = null,
+                Errors = new[] { ex.Message }
+            };
+
+            return BadRequest(response);
         }
     }
 
@@ -97,25 +141,44 @@ public class DashboardController : ControllerBase
 
             if (csvExportFilterRequestDto.ReportType == ReportType.Daily)
             {
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.InvalidCredentials,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.BadRequest,
+                    Data = null,
+                };
+
                 if (csvExportFilterRequestDto.StartDate.HasValue && csvExportFilterRequestDto.StartDate > today)
                 {
-                    return BadRequest(ErrorMessages.StartDateInFuture);
+                    responseError.Errors = new[] { ErrorMessages.StartDateInFuture };
+                    return BadRequest(responseError);
                 }
 
                 if (csvExportFilterRequestDto.EndDate.HasValue && csvExportFilterRequestDto.EndDate > today)
                 {
-                    return BadRequest(ErrorMessages.EndDateInFuture);
+                    responseError.Errors = new[] { ErrorMessages.EndDateInFuture };
+                    return BadRequest(responseError);
                 }
 
                 if (csvExportFilterRequestDto.StartDate.HasValue && csvExportFilterRequestDto.EndDate.HasValue &&
                         csvExportFilterRequestDto.StartDate > csvExportFilterRequestDto.EndDate)
                 {
-                    return BadRequest(ErrorMessages.StartDateAfterEndDate);
+                    responseError.Errors = new[] { ErrorMessages.StartDateAfterEndDate };
+                    return BadRequest(responseError);
                 }
             }
 
             if (csvExportFilterRequestDto.ReportType == ReportType.Monthly && csvExportFilterRequestDto.RangeType == RangeType.Custom)
             {
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.InvalidCredentials,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.BadRequest,
+                    Data = null,
+                };
+
                 bool startValid = csvExportFilterRequestDto.StartMonth.HasValue && csvExportFilterRequestDto.StartYear.HasValue;
                 bool endValid = csvExportFilterRequestDto.EndMonth.HasValue && csvExportFilterRequestDto.EndYear.HasValue;
 
@@ -127,22 +190,26 @@ public class DashboardController : ControllerBase
 
                     if (start > today)
                     {
-                        return BadRequest(ErrorMessages.StartMonthInFuture);
+                        responseError.Errors = new[] { ErrorMessages.StartMonthInFuture };
+                        return BadRequest(responseError);
                     }
 
                     if (end.Year > today.Year || (end.Year == today.Year && end.Month > today.Month))
                     {
-                        return BadRequest(ErrorMessages.EndMonthInFuture);
+                        responseError.Errors = new[] { ErrorMessages.EndMonthInFuture };
+                        return BadRequest(responseError);
                     }
 
                     if (start > end)
                     {
-                        return BadRequest(ErrorMessages.StartMonthAfterEndMonth);
+                        responseError.Errors = new[] { ErrorMessages.StartMonthAfterEndMonth };
+                        return BadRequest(responseError);
                     }
                 }
                 else
                 {
-                    return BadRequest(ErrorMessages.CustomMonthRangeRequired);
+                    responseError.Errors = new[] { ErrorMessages.CustomMonthRangeRequired };
+                    return BadRequest(responseError);
                 }
 
             }
@@ -152,7 +219,16 @@ public class DashboardController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = ErrorMessages.ExportCsvFailed, detail = ex.Message });
+            Response<object> response = new Response<object>
+            {
+                Message = ErrorMessages.ExportCsvFailed,
+                Succeeded = false,
+                StatusCode = (int)HttpStatusCode.BadRequest,
+                Data = null,
+                Errors = new[] { ex.Message }
+            };
+
+            return BadRequest(response);
         }
     }
 }

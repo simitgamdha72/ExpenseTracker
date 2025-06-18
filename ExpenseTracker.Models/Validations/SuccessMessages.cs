@@ -9,5 +9,12 @@ namespace ExpenseTracker.Models.Validations.Constants.SuccessMessages
         public const string ExpenseCreated = "Expense created.";
         public const string ExpenseUpdated = "Expense updated.";
         public const string ExpenseDeleted = "Expense deleted.";
+        public const string LoginSuccessful = "Login successful.";
+        public const string SummaryDataFetched = "Summary data fetched successfully.";
+        public const string CategoryFetched = "Category fetched successfully.";
+        public const string CategoriesFetched = "Categories fetched successfully.";
+        public const string ExpensesFetched = "Expenses fetched successfully.";
+
+
     }
 }

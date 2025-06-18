@@ -61,11 +61,11 @@ public class ExpensesService : IExpensesService
         };
     }
 
-    public async Task<(bool Success, string Message)> CreateExpenseAsync(int? userId, ExpenseDto expenseDto)
+    public async Task<(bool Success, string Message, Expense? expense)> CreateExpenseAsync(int? userId, ExpenseDto expenseDto)
     {
         if (!await _expenseCategoryRepository.ExistsByNameAsync(expenseDto.Category ?? ""))
         {
-            return (false, ErrorMessages.InvalidCategory);
+            return (false, ErrorMessages.InvalidCategory, null);
         }
 
         ExpenseCategory? Category = await _expenseCategoryRepository.GetCategoryByNameAsync(expenseDto.Category ?? "");
@@ -83,21 +83,21 @@ public class ExpensesService : IExpensesService
 
         await _expenseRepository.AddAsync(expense);
         await _expenseRepository.SaveChangesAsync();
-        return (true, SuccessMessages.ExpenseCreated);
+        return (true, SuccessMessages.ExpenseCreated, expense);
     }
 
-    public async Task<(bool Success, string Message)> UpdateExpenseAsync(int id, int? userId, ExpenseDto expenseDto)
+    public async Task<(bool Success, string Message, Expense? expense)> UpdateExpenseAsync(int id, int? userId, ExpenseDto expenseDto)
     {
         Expense? expense = await _expenseRepository.GetByIdAsync(id);
 
         if (expense == null || expense.UserId != userId)
         {
-            return (false, ErrorMessages.ExpenseNotFound);
+            return (false, ErrorMessages.ExpenseNotFound, null);
         }
 
         if (!await _expenseCategoryRepository.ExistsByNameAsync(expenseDto.Category ?? ""))
         {
-            return (false, ErrorMessages.InvalidCategory);
+            return (false, ErrorMessages.InvalidCategory, null);
         }
 
         ExpenseCategory? Category = await _expenseCategoryRepository.GetCategoryByNameAsync(expenseDto.Category ?? "");
@@ -111,7 +111,7 @@ public class ExpensesService : IExpensesService
         _expenseRepository.Update(expense);
         await _expenseRepository.SaveChangesAsync();
 
-        return (true, SuccessMessages.ExpenseUpdated);
+        return (true, SuccessMessages.ExpenseUpdated, expense);
     }
 
     public async Task<(bool Success, string Message)> DeleteExpenseAsync(int id, int? userId)

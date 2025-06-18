@@ -1,5 +1,8 @@
+using System.Net;
 using System.Security.Claims;
+using ExpenseTracker.Models.Dto;
 using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
+using ExpenseTracker.Models.Validations.Constants.SuccessMessages;
 using ExpenseTracker.Service.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,26 +29,71 @@ public class UserController : ControllerBase
         {
             if (!User.Identity!.IsAuthenticated)
             {
-                return NotFound(ErrorMessages.UserNotFound);
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.UnauthorizedAccess,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { ErrorMessages.UserNotFound }
+                };
+                return NotFound(responseError);
             }
 
             int? userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
 
             if (userId == 0)
             {
-                return NotFound();
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.UnauthorizedAccess,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { ErrorMessages.UserNotFound }
+                };
+                return NotFound(responseError);
             }
-            var user = await _userService.GetUserByIdAsync(userId);
+
+            UserProfileResponseDto? user = await _userService.GetUserByIdAsync(userId);
 
             if (user == null)
-                return NotFound("User not found.");
+            {
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.UnauthorizedAccess,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { ErrorMessages.UserNotFound }
+                };
+                return NotFound(responseError);
+            }
 
-            return Ok(user);
+            Response<object> response = new Response<object>
+            {
+                Message = SuccessMessages.SummaryDataFetched,
+                Succeeded = true,
+                StatusCode = (int)HttpStatusCode.OK,
+                Data = user
+            };
+
+            return Ok(response);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get user profile.");
-            return StatusCode(500, "Internal server error.");
+
+            Response<object> response = new Response<object>
+            {
+                Message = ErrorMessages.InternalServerError,
+                Succeeded = false,
+                StatusCode = (int)HttpStatusCode.InternalServerError,
+                Data = null,
+                Errors = new[] { ex.Message }
+            };
+
+            return StatusCode((int)HttpStatusCode.InternalServerError, response);
         }
     }
 

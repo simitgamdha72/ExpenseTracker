@@ -1,5 +1,8 @@
+using System.Net;
 using ExpenseTracker.Models.Dto;
+using ExpenseTracker.Models.Models;
 using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
+using ExpenseTracker.Models.Validations.Constants.SuccessMessages;
 using ExpenseTracker.Service.Interface;
 using ExpenseTracker.Service.Validations;
 using Microsoft.AspNetCore.Authorization;
@@ -25,11 +28,28 @@ public class ExpenseCategoriesController : ControllerBase
     {
         try
         {
-            return Ok(await _expenseCategoriesService.GetCategoriesAsync());
+            Response<object> response = new Response<object>
+            {
+                Message = SuccessMessages.CategoriesFetched,
+                Succeeded = true,
+                StatusCode = (int)HttpStatusCode.OK,
+                Data = await _expenseCategoriesService.GetCategoriesAsync()
+            };
+
+            return Ok(response);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = ErrorMessages.InternalServerError, detail = ex.Message });
+            Response<object> response = new Response<object>
+            {
+                Message = ErrorMessages.InternalServerError,
+                Succeeded = false,
+                StatusCode = (int)HttpStatusCode.InternalServerError,
+                Data = null,
+                Errors = new[] { ex.Message }
+            };
+
+            return StatusCode((int)HttpStatusCode.InternalServerError, response);
         }
 
     }
@@ -43,14 +63,39 @@ public class ExpenseCategoriesController : ControllerBase
 
             if (expenseCategoryDto == null)
             {
-                return NotFound(ErrorMessages.CategoryNotFound);
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.InvalidCredentials,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { ErrorMessages.NotFound }
+                };
+                return NotFound(responseError);
             }
 
-            return Ok(expenseCategoryDto);
+            Response<ExpenseCategoryDto> response = new Response<ExpenseCategoryDto>
+            {
+                Message = SuccessMessages.CategoryFetched,
+                Succeeded = true,
+                StatusCode = (int)HttpStatusCode.OK,
+                Data = expenseCategoryDto
+            };
+
+            return Ok(response);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = ErrorMessages.InternalServerError, detail = ex.Message });
+            Response<object> response = new Response<object>
+            {
+                Message = ErrorMessages.InternalServerError,
+                Succeeded = false,
+                StatusCode = (int)HttpStatusCode.InternalServerError,
+                Data = null,
+                Errors = new[] { ex.Message }
+            };
+
+            return StatusCode((int)HttpStatusCode.InternalServerError, response);
         }
 
     }
@@ -62,18 +107,43 @@ public class ExpenseCategoriesController : ControllerBase
         try
         {
 
-            (bool Success, string Message, Models.Models.ExpenseCategory? Category) result = await _expenseCategoriesService.CreateCategoryAsync(expenseCategoryDto);
+            (bool Success, string Message, ExpenseCategory? Category) result = await _expenseCategoriesService.CreateCategoryAsync(expenseCategoryDto);
 
             if (!result.Success)
             {
-                return Conflict(result.Message);
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.InvalidCredentials,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.Conflict,
+                    Data = null,
+                    Errors = new[] { result.Message }
+                };
+                return Conflict(responseError);
             }
 
-            return CreatedAtAction(nameof(GetCategory), new { id = result.Category!.Id }, result.Category);
+            Response<ExpenseCategory> response = new Response<ExpenseCategory>
+            {
+                Message = SuccessMessages.Created,
+                Succeeded = true,
+                StatusCode = (int)HttpStatusCode.Created,
+                Data = result.Category
+            };
+
+            return Ok(response);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = ErrorMessages.InternalServerError, detail = ex.Message });
+            Response<object> response = new Response<object>
+            {
+                Message = ErrorMessages.InternalServerError,
+                Succeeded = false,
+                StatusCode = (int)HttpStatusCode.InternalServerError,
+                Data = null,
+                Errors = new[] { ex.Message }
+            };
+
+            return StatusCode((int)HttpStatusCode.InternalServerError, response);
         }
 
     }
@@ -89,21 +159,54 @@ public class ExpenseCategoriesController : ControllerBase
 
             if (!result.Success)
             {
-                return BadRequest(result.Message);
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.InvalidCredentials,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { ErrorMessages.NotFound }
+                };
+                return NotFound(responseError);
             }
 
-            return CreatedAtAction(nameof(GetCategory), new { id = result.Category!.Id }, result.Category);
+            Response<ExpenseCategory> response = new Response<ExpenseCategory>
+            {
+                Message = SuccessMessages.Updated,
+                Succeeded = true,
+                StatusCode = (int)HttpStatusCode.OK,
+                Data = result.Category
+            };
+
+            return Ok(response);
 
         }
         catch (Exception ex)
         {
             if (ex.Message == ErrorMessages.CategoryNameExists)
             {
-                return Conflict(ErrorMessages.CategoryNameExists);
+                Response<object> response = new Response<object>
+                {
+                    Message = ErrorMessages.InvalidCredentials,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.Conflict,
+                    Data = null,
+                    Errors = new[] { ex.Message }
+                };
+                return Conflict(response);
             }
             else
             {
-                return StatusCode(500, new { message = ErrorMessages.InternalServerError, detail = ex.Message });
+                Response<object> response = new Response<object>
+                {
+                    Message = ErrorMessages.InternalServerError,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.InternalServerError,
+                    Data = null,
+                    Errors = new[] { ex.Message }
+                };
+
+                return StatusCode((int)HttpStatusCode.InternalServerError, response);
             }
 
 
@@ -120,15 +223,38 @@ public class ExpenseCategoriesController : ControllerBase
 
             if (!result.Success)
             {
-                return NotFound(result.Message);
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.InvalidCredentials,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { ErrorMessages.NotFound }
+                };
+                return NotFound(responseError);
             }
 
-            return Ok(result.Message);
+            Response<object> response = new Response<object>
+            {
+                Message = result.Message,
+                Succeeded = true,
+                StatusCode = (int)HttpStatusCode.OK,
+            };
+
+            return Ok(response);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = ErrorMessages.InternalServerError, detail = ex.Message });
-        }
+            Response<object> response = new Response<object>
+            {
+                Message = ErrorMessages.InternalServerError,
+                Succeeded = false,
+                StatusCode = (int)HttpStatusCode.InternalServerError,
+                Data = null,
+                Errors = new[] { ex.Message }
+            };
 
+            return StatusCode((int)HttpStatusCode.InternalServerError, response);
+        }
     }
 }

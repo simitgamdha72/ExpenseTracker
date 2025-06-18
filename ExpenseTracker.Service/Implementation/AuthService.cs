@@ -31,7 +31,7 @@ public class AuthService : IAuthService
         return _jwt.GenerateToken(user);
     }
 
-    public async Task<string> RegisterAsync(RegisterRequestDto registerRequestDto)
+    public async Task<User> RegisterAsync(RegisterRequestDto registerRequestDto)
     {
         if (await _userRepository.EmailOrUsernameExistsAsync(registerRequestDto.Email, registerRequestDto.Username))
         {
@@ -55,6 +55,6 @@ public class AuthService : IAuthService
         await _userRepository.AddAsync(user);
         await _userRepository.SaveChangesAsync();
 
-        return SuccessMessages.UserRegistered;
+        return user;
     }
 }

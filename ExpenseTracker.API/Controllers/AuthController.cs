@@ -1,6 +1,8 @@
 using System.Net;
 using ExpenseTracker.Models.Dto;
+using ExpenseTracker.Models.Models;
 using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
+using ExpenseTracker.Models.Validations.Constants.SuccessMessages;
 using ExpenseTracker.Service.Interface;
 using ExpenseTracker.Service.Validations;
 using Microsoft.AspNetCore.Mvc;
@@ -27,12 +29,26 @@ public class AuthController : ControllerBase
 
             if (registerRequestDto.RoleId != 1 && registerRequestDto.RoleId != 2)
             {
-                return BadRequest("Invalid role. Role must be 1 or 2.");
+                Response<object?> responseError = new Response<object?>
+                {
+                    Message = ErrorMessages.InvalidRole,
+                    StatusCode = (int)HttpStatusCode.BadRequest,
+                    Succeeded = false,
+                };
+                return BadRequest(responseError);
             }
 
-            string message = await _authService.RegisterAsync(registerRequestDto);
+            User user = await _authService.RegisterAsync(registerRequestDto);
 
-            return Ok(new { message });
+            Response<User> response = new Response<User>
+            {
+                Message = SuccessMessages.UserRegistered,
+                StatusCode = (int)HttpStatusCode.OK,
+                Succeeded = true,
+                Data = user
+            };
+
+            return Ok(response);
         }
         catch (Exception ex)
         {
@@ -40,11 +56,30 @@ public class AuthController : ControllerBase
 
             if (ex.Message == ErrorMessages.EmailOrUsernameExists)
             {
-                return Conflict(ErrorMessages.EmailOrUsernameExists);
+
+                Response<object> response = new Response<object>
+                {
+                    Message = ErrorMessages.EmailOrUsernameExists,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.Conflict,
+                    Data = null,
+                    Errors = new[] { ex.Message }
+                };
+
+                return BadRequest(response);
             }
             else
             {
-                return BadRequest(ex.Message);
+                Response<object> response = new Response<object>
+                {
+                    Message = ErrorMessages.RegistrationFailed,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.BadRequest,
+                    Data = null,
+                    Errors = new[] { ex.Message }
+                };
+
+                return BadRequest(response);
             }
 
         }
@@ -61,15 +96,38 @@ public class AuthController : ControllerBase
 
             if (token == null)
             {
-                return Unauthorized(ErrorMessages.InvalidCredentials);
+                Response<object?> responseError = new Response<object?>
+                {
+                    Message = ErrorMessages.InvalidCredentials,
+                    StatusCode = (int)HttpStatusCode.BadRequest,
+                    Succeeded = false,
+                };
+                return BadRequest(responseError);
             }
 
-            return Ok(new { token });
+            Response<object> response = new Response<object>
+            {
+                Message = SuccessMessages.LoginSuccessful,
+                Succeeded = true,
+                StatusCode = (int)HttpStatusCode.OK,
+                Data = token
+            };
+
+            return Ok(response);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, ErrorMessages.LoginFailed);
-            return StatusCode(500, ErrorMessages.LoginFailed);
+
+            Response<object> response = new Response<object>
+            {
+                Message = ErrorMessages.LoginFailed,
+                Succeeded = false,
+                StatusCode = (int)HttpStatusCode.BadRequest,
+                Data = null,
+                Errors = new[] { ex.Message }
+            };
+            return BadRequest(response);
         }
     }
 

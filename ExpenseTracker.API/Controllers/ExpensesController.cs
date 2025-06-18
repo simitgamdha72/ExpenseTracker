@@ -4,6 +4,9 @@ using ExpenseTracker.Models.Dto;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
+using System.Net;
+using ExpenseTracker.Models.Validations.Constants.SuccessMessages;
+using ExpenseTracker.Models.Models;
 
 namespace ExpenseTracker.API.Controllers;
 
@@ -26,22 +29,54 @@ public class ExpensesController : ControllerBase
         {
             if (!User.Identity!.IsAuthenticated)
             {
-                return NotFound(ErrorMessages.UserNotFound);
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.UnauthorizedAccess,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { ErrorMessages.UserNotFound }
+                };
+                return NotFound(responseError);
             }
 
             int? userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
 
             if (userId == 0)
             {
-                return NotFound();
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.UnauthorizedAccess,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { ErrorMessages.UserNotFound }
+                };
+                return NotFound(responseError);
             }
 
             IEnumerable<ExpenseDto> Expenses = await _expensesService.GetExpensesByUserIdAsync(userId);
-            return Ok(Expenses);
+
+            Response<IEnumerable<ExpenseDto>> response = new Response<IEnumerable<ExpenseDto>>
+            {
+                Message = SuccessMessages.ExpensesFetched,
+                Succeeded = true,
+                StatusCode = (int)HttpStatusCode.OK,
+                Data = Expenses
+            };
+            return Ok(response);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = ErrorMessages.GetExpensesFailed, detail = ex.Message });
+            Response<object> response = new Response<object>
+            {
+                Message = ErrorMessages.GetExpensesFailed,
+                Succeeded = false,
+                StatusCode = (int)HttpStatusCode.InternalServerError,
+                Data = null,
+                Errors = new[] { ex.Message }
+            };
+            return StatusCode((int)HttpStatusCode.InternalServerError, response);
         }
     }
 
@@ -53,28 +88,67 @@ public class ExpensesController : ControllerBase
         {
             if (!User.Identity!.IsAuthenticated)
             {
-                return NotFound(ErrorMessages.UserNotFound);
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.UnauthorizedAccess,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { ErrorMessages.UserNotFound }
+                };
+                return NotFound(responseError);
             }
 
             int? userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
 
             if (userId == 0)
             {
-                return NotFound();
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.UnauthorizedAccess,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { ErrorMessages.UserNotFound }
+                };
+                return NotFound(responseError);
             }
 
             ExpenseDto? expense = await _expensesService.GetExpenseByIdAsync(id, userId);
 
             if (expense == null)
             {
-                return NotFound(ErrorMessages.ExpenseNotFound);
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.ExpenseNotFound,
+                    Succeeded = true,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                };
+                return NotFound(responseError);
             }
 
-            return Ok(expense);
+            Response<ExpenseDto> response = new Response<ExpenseDto>
+            {
+                Message = SuccessMessages.ExpensesFetched,
+                Succeeded = true,
+                StatusCode = (int)HttpStatusCode.OK,
+                Data = expense
+            };
+            return Ok(response);
+
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = ErrorMessages.GetExpensesFailed, detail = ex.Message });
+            Response<object> response = new Response<object>
+            {
+                Message = ErrorMessages.GetExpensesFailed,
+                Succeeded = false,
+                StatusCode = (int)HttpStatusCode.InternalServerError,
+                Data = null,
+                Errors = new[] { ex.Message }
+            };
+            return StatusCode((int)HttpStatusCode.InternalServerError, response);
         }
     }
 
@@ -86,28 +160,69 @@ public class ExpensesController : ControllerBase
         {
             if (!User.Identity!.IsAuthenticated)
             {
-                return NotFound(ErrorMessages.UserNotFound);
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.UnauthorizedAccess,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { ErrorMessages.UserNotFound }
+                };
+                return NotFound(responseError);
             }
 
             int? userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
 
             if (userId == 0)
             {
-                return NotFound();
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.UnauthorizedAccess,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { ErrorMessages.UserNotFound }
+                };
+                return NotFound(responseError);
             }
 
-            (bool Success, string Message) result = await _expensesService.CreateExpenseAsync(userId, expenseDto);
+            (bool Success, string Message, Expense? expense) result = await _expensesService.CreateExpenseAsync(userId, expenseDto);
 
             if (!result.Success)
             {
-                return BadRequest(result.Message);
+
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.InvalidCredentials,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.BadRequest,
+                    Data = null,
+                    Errors = new[] { result.Message }
+                };
+                return BadRequest(responseError);
             }
 
-            return StatusCode(201, result.Message);
+            Response<Expense> response = new Response<Expense>
+            {
+                Message = SuccessMessages.ExpenseCreated,
+                Succeeded = true,
+                StatusCode = (int)HttpStatusCode.Created,
+                Data = result.expense
+            };
+
+            return Ok(response);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = ErrorMessages.CreateExpenseFailed, detail = ex.Message });
+            Response<object> response = new Response<object>
+            {
+                Message = ErrorMessages.CreateExpenseFailed,
+                Succeeded = false,
+                StatusCode = (int)HttpStatusCode.InternalServerError,
+                Data = null,
+                Errors = new[] { ex.Message }
+            };
+            return StatusCode((int)HttpStatusCode.InternalServerError, response);
         }
     }
 
@@ -119,28 +234,68 @@ public class ExpensesController : ControllerBase
         {
             if (!User.Identity!.IsAuthenticated)
             {
-                return NotFound(ErrorMessages.UserNotFound);
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.UnauthorizedAccess,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { ErrorMessages.UserNotFound }
+                };
+                return NotFound(responseError);
             }
 
             int? userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
 
             if (userId == 0)
             {
-                return NotFound();
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.UnauthorizedAccess,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { ErrorMessages.UserNotFound }
+                };
+                return NotFound(responseError);
             }
 
-            (bool Success, string Message) result = await _expensesService.UpdateExpenseAsync(id, userId, expenseDto);
+            (bool Success, string Message, Expense? expense) result = await _expensesService.UpdateExpenseAsync(id, userId, expenseDto);
 
             if (!result.Success)
             {
-                return BadRequest(result.Message);
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.InvalidCredentials,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.BadRequest,
+                    Data = null,
+                    Errors = new[] { result.Message }
+                };
+                return BadRequest(responseError);
             }
 
-            return Ok(result.Message);
+            Response<Expense> response = new Response<Expense>
+            {
+                Message = SuccessMessages.ExpenseUpdated,
+                Succeeded = true,
+                StatusCode = (int)HttpStatusCode.OK,
+                Data = result.expense
+            };
+
+            return Ok(response);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = ErrorMessages.UpdateExpenseFailed, detail = ex.Message });
+            Response<object> response = new Response<object>
+            {
+                Message = ErrorMessages.UpdateExpenseFailed,
+                Succeeded = false,
+                StatusCode = (int)HttpStatusCode.InternalServerError,
+                Data = null,
+                Errors = new[] { ex.Message }
+            };
+            return StatusCode((int)HttpStatusCode.InternalServerError, response);
         }
     }
 
@@ -152,28 +307,65 @@ public class ExpensesController : ControllerBase
         {
             if (!User.Identity!.IsAuthenticated)
             {
-                return NotFound(ErrorMessages.UserNotFound);
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.UnauthorizedAccess,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { ErrorMessages.UserNotFound }
+                };
+                return NotFound(responseError);
             }
 
             int? userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
 
             if (userId == 0)
             {
-                return NotFound();
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.UnauthorizedAccess,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { ErrorMessages.UserNotFound }
+                };
+                return NotFound(responseError);
             }
 
             (bool Success, string Message) result = await _expensesService.DeleteExpenseAsync(id, userId);
 
             if (!result.Success)
             {
-                return NotFound(result.Message);
+                Response<object> responseError = new Response<object>
+                {
+                    Message = ErrorMessages.InvalidCredentials,
+                    Succeeded = false,
+                    StatusCode = (int)HttpStatusCode.NotFound,
+                    Data = null,
+                    Errors = new[] { result.Message }
+                };
+                return NotFound(responseError);
             }
-
-            return Ok(result.Message);
+            Response<object> response = new Response<object>
+            {
+                Message = result.Message,
+                Succeeded = true,
+                StatusCode = (int)HttpStatusCode.OK,
+            };
+            return Ok(response);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = ErrorMessages.DeleteExpenseFailed, detail = ex.Message });
+            Response<object> response = new Response<object>
+            {
+                Message = ErrorMessages.DeleteExpenseFailed,
+                Succeeded = false,
+                StatusCode = (int)HttpStatusCode.InternalServerError,
+                Data = null,
+                Errors = new[] { ex.Message }
+            };
+            return StatusCode((int)HttpStatusCode.InternalServerError, response);
         }
     }
 
@@ -185,11 +377,27 @@ public class ExpensesController : ControllerBase
         {
             FilteredExpenseReportDto expenses = await _expensesService.GetAllUsersExpensesAsync(userNames);
 
-            return Ok(expenses);
+            Response<FilteredExpenseReportDto> response = new Response<FilteredExpenseReportDto>
+            {
+                Message = SuccessMessages.ExpensesFetched,
+                Succeeded = true,
+                StatusCode = (int)HttpStatusCode.OK,
+                Data = expenses
+            };
+
+            return Ok(response);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = ErrorMessages.GetExpensesFailed, detail = ex.Message });
+            Response<object> response = new Response<object>
+            {
+                Message = ErrorMessages.GetExpensesFailed,
+                Succeeded = false,
+                StatusCode = (int)HttpStatusCode.InternalServerError,
+                Data = null,
+                Errors = new[] { ex.Message }
+            };
+            return StatusCode((int)HttpStatusCode.InternalServerError, response);
         }
     }
 

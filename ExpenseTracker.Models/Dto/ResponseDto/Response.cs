@@ -1,4 +1,4 @@
-using System.Net;
+namespace ExpenseTracker.Models.Dto;
 
 public class Response<T>
 {
@@ -6,6 +6,5 @@ public class Response<T>
     public bool Succeeded { get; set; }
     public string? Message { get; set; }
     public string[]? Errors { get; set; }
-    public HttpStatusCode StatusCode { get; set; }
-
+    public int StatusCode { get; set; }
 }
