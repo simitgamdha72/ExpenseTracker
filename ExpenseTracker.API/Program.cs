@@ -51,7 +51,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = config["Jwt:Issuer"],
         ValidAudience = config["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]!))
     };
 });
 
@@ -64,56 +64,17 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
-// builder.Services.AddSwaggerGen(c =>
-// {
-//     c.SwaggerDoc("v1", new() { Title = "My API", Version = "v1" });
-
-//     c.MapType<DateOnly>(() => new OpenApiSchema
-//     {
-//         Type = "string",
-//         Format = "date",
-//         Example = new Microsoft.OpenApi.Any.OpenApiString("2025-06-01")
-//     });
-
-//     c.UseAllOfToExtendReferenceSchemas();
-
-//     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-//     {
-//         Description = "Enter 'Bearer' followed by your JWT token",
-//         Name = "Authorization",
-//         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-//         Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
-//         Scheme = "Bearer"
-//     });
-
-//     c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-//     {
-//         {
-//             new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-//             {
-//                 Reference = new Microsoft.OpenApi.Models.OpenApiReference
-//                 {
-//                     Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-//                     Id = "Bearer"
-//                 }
-//             },
-//             new string[] {}
-//         }
-//     });
-// });
 
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "My API", Version = "v1" });
 
-    // ✅ Display enums as string in Swagger
     c.SchemaGeneratorOptions = new SchemaGeneratorOptions
     {
         UseInlineDefinitionsForEnums = true,
         SchemaFilters = { new EnumSchemaFilter() }
     };
 
-    // ✅ Map DateOnly
     c.MapType<DateOnly>(() => new OpenApiSchema
     {
         Type = "string",
@@ -121,7 +82,6 @@ builder.Services.AddSwaggerGen(c =>
         Example = new Microsoft.OpenApi.Any.OpenApiString("2025-06-01")
     });
 
-    // ✅ Security Definitions
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "Enter 'Bearer' followed by your JWT token",

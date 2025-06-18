@@ -9,7 +9,7 @@ namespace ExpenseTracker.Service.Validations
             var parameters = filterContext.ActionArguments;
             foreach (var param in parameters)
             {
-                TrimStringProperties(param.Value);
+                TrimStringProperties(param.Value!);
             }
 
             base.OnActionExecuting(filterContext);
@@ -23,7 +23,7 @@ namespace ExpenseTracker.Service.Validations
             {
                 if (prop.PropertyType == typeof(string) && prop.CanWrite)
                 {
-                    string currentValue = (string)prop.GetValue(obj);
+                    string currentValue = (string)prop.GetValue(obj)!;
                     if (currentValue != null)
                     {
                         prop.SetValue(obj, currentValue.Trim());
@@ -36,14 +36,14 @@ namespace ExpenseTracker.Service.Validations
 
     public class NoWhiteSpaceOnly : ValidationAttribute
     {
-        public override bool IsValid(object value)
+        public override bool IsValid(object? value)
         {
             if (value == null)
             {
                 return true; // Let Required attribute handle null values
             }
 
-            string stringValue = value.ToString();
+            string stringValue = value.ToString()!;
             return !string.IsNullOrEmpty(stringValue.Trim());
         }
     }
