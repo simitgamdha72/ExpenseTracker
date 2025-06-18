@@ -96,11 +96,6 @@ public class ExpensesController : ControllerBase
                 return NotFound();
             }
 
-            // if (!ModelState.IsValid)
-            // {
-            //     return BadRequest(ModelState);
-            // }
-
             (bool Success, string Message) result = await _expensesService.CreateExpenseAsync(userId, expenseDto);
 
             if (!result.Success)
@@ -133,11 +128,6 @@ public class ExpensesController : ControllerBase
             {
                 return NotFound();
             }
-
-            // if (!ModelState.IsValid)
-            // {
-            //     return BadRequest(ModelState);
-            // }
 
             (bool Success, string Message) result = await _expensesService.UpdateExpenseAsync(id, userId, expenseDto);
 

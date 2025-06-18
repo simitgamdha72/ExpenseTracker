@@ -24,10 +24,6 @@ public class AuthController : ControllerBase
     {
         try
         {
-            // if (!ModelState.IsValid)
-            // {
-            //     return BadRequest(ModelState);
-            // }
 
             if (registerRequestDto.RoleId != 1 && registerRequestDto.RoleId != 2)
             {
@@ -60,10 +56,6 @@ public class AuthController : ControllerBase
     {
         try
         {
-            // if (!ModelState.IsValid)
-            // {
-            //     return BadRequest(ModelState);
-            // }
 
             string? token = await _authService.LoginAsync(loginRequestDto);
 

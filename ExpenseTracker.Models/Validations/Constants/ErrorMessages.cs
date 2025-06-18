@@ -4,7 +4,6 @@ namespace ExpenseTracker.Models.Validations.Constants.ErrorMessages
     {
         public const string EmailOrUsernameExists = "Email or Username already exists.";
         public const string RegistrationFailed = "An error occurred during registration.";
-        public const string UnknownError = "An unexpected error occurred.";
         public const string InvalidCredentials = "Invalid credentials";
         public const string LoginFailed = "An error occurred while logging in.";
         public const string StartDateInFuture = "Start date cannot be in the future.";
@@ -15,12 +14,10 @@ namespace ExpenseTracker.Models.Validations.Constants.ErrorMessages
         public const string StartMonthAfterEndMonth = "Start month cannot be greater than end month.";
         public const string CustomMonthRangeRequired = "Start and end month/year must be provided for custom monthly reports.";
         public const string CategoryNotFound = "Category not found.";
-        public const string CategoryNameExists = "Category name already in use!";
-        public const string CategoryIdMismatch = "Category ID mismatch.";
+        public const string CategoryNameExists = "Category name already exists!";
         public const string InvalidCategory = "Invalid category.";
         public const string UserNotFound = "User not found!";
         public const string ExpenseNotFound = "Expense not found.";
-        public const string ExpenseIdMismatch = "Expense ID mismatch.";
         public const string GetExpensesFailed = "An error occurred while retrieving expenses.";
         public const string CreateExpenseFailed = "An error occurred while creating the expense.";
         public const string UpdateExpenseFailed = "An error occurred while updating the expense.";
