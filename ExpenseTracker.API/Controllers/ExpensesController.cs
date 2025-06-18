@@ -96,10 +96,10 @@ public class ExpensesController : ControllerBase
                 return NotFound();
             }
 
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            // if (!ModelState.IsValid)
+            // {
+            //     return BadRequest(ModelState);
+            // }
 
             (bool Success, string Message) result = await _expensesService.CreateExpenseAsync(userId, expenseDto);
 
@@ -120,10 +120,6 @@ public class ExpensesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateExpense(int id, [FromBody] ExpenseDto expenseDto)
     {
-        if (id != expenseDto.Id)
-        {
-            return BadRequest(ErrorMessages.ExpenseIdMismatch);
-        }
         try
         {
             if (!User.Identity!.IsAuthenticated)
@@ -138,10 +134,10 @@ public class ExpensesController : ControllerBase
                 return NotFound();
             }
 
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            // if (!ModelState.IsValid)
+            // {
+            //     return BadRequest(ModelState);
+            // }
 
             (bool Success, string Message) result = await _expensesService.UpdateExpenseAsync(id, userId, expenseDto);
 

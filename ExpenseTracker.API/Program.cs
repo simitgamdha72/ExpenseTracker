@@ -27,6 +27,7 @@ builder.Services.AddScoped<IExpenseCategoriesService, ExpenseCategoriesService>(
 builder.Services.AddScoped<IExpensesService, ExpensesService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

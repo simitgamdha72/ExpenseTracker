@@ -62,10 +62,10 @@ public class ExpenseCategoriesController : ControllerBase
         try
         {
 
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            // if (!ModelState.IsValid)
+            // {
+            //     return BadRequest(ModelState);
+            // }
 
             (bool Success, string Message, Models.Models.ExpenseCategory? Category) result = await _expenseCategoriesService.CreateCategoryAsync(expenseCategoryDto);
 
@@ -87,18 +87,13 @@ public class ExpenseCategoriesController : ControllerBase
     [Trim]
     public async Task<IActionResult> UpdateCategory(int id, ExpenseCategoryDto expenseCategoryDto)
     {
-        if (id != expenseCategoryDto.Id)
-        {
-            return BadRequest(ErrorMessages.CategoryIdMismatch);
-        }
-
         try
         {
 
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            // if (!ModelState.IsValid)
+            // {
+            //     return BadRequest(ModelState);
+            // }
 
             (bool Success, string Message, Models.Models.ExpenseCategory? Category) result = await _expenseCategoriesService.UpdateCategoryAsync(id, expenseCategoryDto);
 

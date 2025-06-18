@@ -24,9 +24,14 @@ public class AuthController : ControllerBase
     {
         try
         {
-            if (!ModelState.IsValid)
+            // if (!ModelState.IsValid)
+            // {
+            //     return BadRequest(ModelState);
+            // }
+
+            if (registerRequestDto.RoleId != 1 && registerRequestDto.RoleId != 2)
             {
-                return BadRequest(ModelState);
+                return BadRequest("Invalid role. Role must be 1 or 2.");
             }
 
             string message = await _authService.RegisterAsync(registerRequestDto);
@@ -55,10 +60,10 @@ public class AuthController : ControllerBase
     {
         try
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            // if (!ModelState.IsValid)
+            // {
+            //     return BadRequest(ModelState);
+            // }
 
             string? token = await _authService.LoginAsync(loginRequestDto);
 
