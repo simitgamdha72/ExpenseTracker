@@ -23,42 +23,31 @@ public class DashboardService : IDashboardService
     public object GetExpenseSummary(CsvExportFilterRequestDto csvExportFilterRequestDto)
     {
         IEnumerable<Expense>? expenses = _expenseRepository.GetFilteredExpenses(csvExportFilterRequestDto);
-
-        Dictionary<string, decimal> categoryTotals = new Dictionary<string, decimal>();
-        decimal totalExpense = 0;
-
-        List<object> expenseList = new();
         bool isMonthly = csvExportFilterRequestDto.ReportType == ReportType.Monthly;
 
-        foreach (var exp in expenses)
-        {
-            string category = exp.Category?.Name ?? "Uncategorized";
-            string dateDisplay = isMonthly
-                ? exp.ExpenseDate.ToDateTime(new TimeOnly(0)).ToString("MMMM yyyy")
-                : exp.ExpenseDate.ToString("yyyy-MM-dd");
-
-            expenseList.Add(new
+        var groupedByCategory = expenses
+            .GroupBy(exp => exp.Category?.Name ?? "Uncategorized")
+            .Select(group => new
             {
-                Username = exp.User?.Username,
-                Date = dateDisplay,
-                Category = category,
-                Amount = exp.Amount,
-                Note = exp.Note
-            });
+                Category = group.Key,
+                TotalAmount = group.Sum(e => e.Amount),
+                Expenses = group.Select(e => new
+                {
+                    Username = e.User?.Username,
+                    Date = isMonthly
+                        ? e.ExpenseDate.ToDateTime(new TimeOnly(0)).ToString("MMMM yyyy")
+                        : e.ExpenseDate.ToString("yyyy-MM-dd"),
+                    Amount = e.Amount,
+                    Note = e.Note
+                }).ToList()
+            }).ToList();
 
-            if (categoryTotals.ContainsKey(category))
-                categoryTotals[category] += exp.Amount;
-            else
-                categoryTotals[category] = exp.Amount;
-
-            totalExpense += exp.Amount;
-        }
+        decimal grandTotal = groupedByCategory.Sum(g => g.TotalAmount);
 
         return new
         {
-            Expenses = expenseList,
-            CategoryTotals = categoryTotals.Select(ct => new { Category = ct.Key, TotalAmount = ct.Value }),
-            TotalExpense = totalExpense
+            Categories = groupedByCategory,
+            TotalExpense = grandTotal
         };
     }
 
@@ -67,23 +56,29 @@ public class DashboardService : IDashboardService
     {
         IEnumerable<Expense>? expenses = _expenseRepository.GetFilteredExpenses(csvExportFilterRequestDto);
 
-        StringBuilder? csv = new StringBuilder();
+        StringBuilder csv = new StringBuilder();
 
         bool isMonthly = csvExportFilterRequestDto.ReportType == ReportType.Monthly;
 
-        csv.AppendLine(isMonthly ? "Username,Month,Category,Amount,Note" : "Username,Date,Category,Amount,Note");
+        // Header
+        csv.AppendLine(isMonthly
+            ? "\"Username\",\"Month\",\"Category\",\"Amount\",\"Note\""
+            : "\"Username\",\"Date\",\"Category\",\"Amount\",\"Note\"");
 
-        Dictionary<string, decimal>? categoryTotals = new Dictionary<string, decimal>();
+        Dictionary<string, decimal> categoryTotals = new Dictionary<string, decimal>();
         decimal totalExpense = 0;
 
         foreach (var exp in expenses)
         {
-            string category = exp.Category?.Name ?? "Uncategorized";
+            string username = Sanitize(exp.User?.Username ?? "Unknown");
+            string category = Sanitize(exp.Category?.Name ?? "Uncategorized");
+            string note = Sanitize(exp.Note ?? "");
+
             string dateDisplay = isMonthly
                 ? exp.ExpenseDate.ToDateTime(new TimeOnly(0)).ToString("MMMM yyyy")
                 : exp.ExpenseDate.ToString("yyyy-MM-dd");
 
-            csv.AppendLine($"{exp.User?.Username},{dateDisplay},{category},{exp.Amount},{exp.Note}");
+            csv.AppendLine($"\"{username}\",\"{dateDisplay}\",\"{category}\",\"{exp.Amount}\",\"{note}\"");
 
             if (categoryTotals.ContainsKey(category))
                 categoryTotals[category] += exp.Amount;
@@ -93,19 +88,18 @@ public class DashboardService : IDashboardService
             totalExpense += exp.Amount;
         }
 
-        // Category totals section
+        // Section separator
         csv.AppendLine();
-        csv.AppendLine("Category Totals:");
-        csv.AppendLine("Category,TotalAmount");
+        csv.AppendLine("\"--- Category Totals ---\"");
+        csv.AppendLine("\"Category\",\"Total Amount\"");
         foreach (var entry in categoryTotals)
-            csv.AppendLine($"{entry.Key},{entry.Value}");
+            csv.AppendLine($"\"{entry.Key}\",\"{entry.Value}\"");
 
         // Grand total
         csv.AppendLine();
-        csv.AppendLine($"Total Expense:,{totalExpense}");
+        csv.AppendLine("\"Total Expense:\",\"" + totalExpense + "\"");
 
-        MemoryStream? stream = new MemoryStream(Encoding.UTF8.GetBytes(csv.ToString()));
-
+        var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv.ToString()));
 
         ExpenseReport expenseReport = new ExpenseReport
         {
@@ -118,6 +112,12 @@ public class DashboardService : IDashboardService
         return stream;
     }
 
+    // Helper to escape values for CSV
+    private string Sanitize(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "";
+        return value.Replace("\"", "\"\""); // Escape double quotes
+    }
 
 
 

@@ -33,7 +33,6 @@ public class DashboardController : ControllerBase
             {
                 Response<object> responseError = new Response<object>
                 {
-                    Message = ErrorMessages.InvalidCredentials,
                     Succeeded = false,
                     StatusCode = (int)HttpStatusCode.BadRequest,
                     Data = null,
@@ -63,7 +62,6 @@ public class DashboardController : ControllerBase
             {
                 Response<object> responseError = new Response<object>
                 {
-                    Message = ErrorMessages.InvalidCredentials,
                     Succeeded = false,
                     StatusCode = (int)HttpStatusCode.BadRequest,
                     Data = null,
@@ -133,7 +131,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("export-csv")]
-    // [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     public IActionResult ExportExpensesToCsv([FromQuery] CsvExportFilterRequestDto csvExportFilterRequestDto)
     {
         try
@@ -172,7 +170,6 @@ public class DashboardController : ControllerBase
             {
                 Response<object> responseError = new Response<object>
                 {
-                    Message = ErrorMessages.InvalidCredentials,
                     Succeeded = false,
                     StatusCode = (int)HttpStatusCode.BadRequest,
                     Data = null,
@@ -202,7 +199,6 @@ public class DashboardController : ControllerBase
             {
                 Response<object> responseError = new Response<object>
                 {
-                    Message = ErrorMessages.InvalidCredentials,
                     Succeeded = false,
                     StatusCode = (int)HttpStatusCode.BadRequest,
                     Data = null,

@@ -11,12 +11,10 @@ using Microsoft.AspNetCore.Mvc;
 [ApiController]
 public class UserController : ControllerBase
 {
-    private readonly ILogger<AuthController> _logger;
     private readonly IUserService _userService;
 
-    public UserController(IUserService userService, ILogger<AuthController> logger)
+    public UserController(IUserService userService)
     {
-        _logger = logger;
         _userService = userService;
     }
 
@@ -82,8 +80,6 @@ public class UserController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get user profile.");
-
             Response<object> response = new Response<object>
             {
                 Message = ErrorMessages.InternalServerError,

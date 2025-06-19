@@ -65,7 +65,6 @@ public class ExpenseCategoriesController : ControllerBase
             {
                 Response<object> responseError = new Response<object>
                 {
-                    Message = ErrorMessages.InvalidCredentials,
                     Succeeded = false,
                     StatusCode = (int)HttpStatusCode.NotFound,
                     Data = null,
@@ -113,7 +112,6 @@ public class ExpenseCategoriesController : ControllerBase
             {
                 Response<object> responseError = new Response<object>
                 {
-                    Message = ErrorMessages.InvalidCredentials,
                     Succeeded = false,
                     StatusCode = (int)HttpStatusCode.Conflict,
                     Data = null,
@@ -161,7 +159,7 @@ public class ExpenseCategoriesController : ControllerBase
             {
                 Response<object> responseError = new Response<object>
                 {
-                    Message = ErrorMessages.InvalidCredentials,
+                    Message = ErrorMessages.CategoryNotFound,
                     Succeeded = false,
                     StatusCode = (int)HttpStatusCode.NotFound,
                     Data = null,
@@ -187,7 +185,7 @@ public class ExpenseCategoriesController : ControllerBase
             {
                 Response<object> response = new Response<object>
                 {
-                    Message = ErrorMessages.InvalidCredentials,
+                    Message = ex.Message,
                     Succeeded = false,
                     StatusCode = (int)HttpStatusCode.Conflict,
                     Data = null,
@@ -225,7 +223,6 @@ public class ExpenseCategoriesController : ControllerBase
             {
                 Response<object> responseError = new Response<object>
                 {
-                    Message = ErrorMessages.InvalidCredentials,
                     Succeeded = false,
                     StatusCode = (int)HttpStatusCode.NotFound,
                     Data = null,

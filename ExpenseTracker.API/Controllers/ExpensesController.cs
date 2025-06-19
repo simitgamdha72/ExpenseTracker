@@ -193,7 +193,6 @@ public class ExpensesController : ControllerBase
 
                 Response<object> responseError = new Response<object>
                 {
-                    Message = ErrorMessages.InvalidCredentials,
                     Succeeded = false,
                     StatusCode = (int)HttpStatusCode.BadRequest,
                     Data = null,
@@ -202,12 +201,19 @@ public class ExpensesController : ControllerBase
                 return BadRequest(responseError);
             }
 
-            Response<Expense> response = new Response<Expense>
+            Response<ExpenseDto> response = new Response<ExpenseDto>
             {
                 Message = SuccessMessages.ExpenseCreated,
                 Succeeded = true,
-                StatusCode = (int)HttpStatusCode.Created,
-                Data = result.expense
+                StatusCode = (int)HttpStatusCode.OK,
+                Data = new ExpenseDto
+                {
+                    Id = result.expense!.Id,
+                    Amount = result.expense.Amount,
+                    Category = result.expense.Category?.Name,
+                    ExpenseDate = result.expense.ExpenseDate,
+                    Note = result.expense.Note
+                }
             };
 
             return Ok(response);
@@ -266,7 +272,6 @@ public class ExpensesController : ControllerBase
             {
                 Response<object> responseError = new Response<object>
                 {
-                    Message = ErrorMessages.InvalidCredentials,
                     Succeeded = false,
                     StatusCode = (int)HttpStatusCode.BadRequest,
                     Data = null,
@@ -275,12 +280,19 @@ public class ExpensesController : ControllerBase
                 return BadRequest(responseError);
             }
 
-            Response<Expense> response = new Response<Expense>
+            Response<ExpenseDto> response = new Response<ExpenseDto>
             {
                 Message = SuccessMessages.ExpenseUpdated,
                 Succeeded = true,
                 StatusCode = (int)HttpStatusCode.OK,
-                Data = result.expense
+                Data = new ExpenseDto
+                {
+                    Id = result.expense!.Id,
+                    Amount = result.expense.Amount,
+                    Category = result.expense.Category?.Name,
+                    ExpenseDate = result.expense.ExpenseDate,
+                    Note = result.expense.Note
+                }
             };
 
             return Ok(response);
@@ -339,7 +351,6 @@ public class ExpensesController : ControllerBase
             {
                 Response<object> responseError = new Response<object>
                 {
-                    Message = ErrorMessages.InvalidCredentials,
                     Succeeded = false,
                     StatusCode = (int)HttpStatusCode.NotFound,
                     Data = null,

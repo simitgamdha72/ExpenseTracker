@@ -23,16 +23,23 @@ public class ReportService : IReportService
     {
         IEnumerable<Expense>? expenses = _expenseRepository.GetFilteredUserExpenses(userId, userCsvExportFilterRequestDto);
 
-        StringBuilder? csv = new StringBuilder();
-        csv.AppendLine("Date,Category,Amount,Note");
+        StringBuilder csv = new StringBuilder();
 
-        Dictionary<string, decimal>? categoryTotals = new Dictionary<string, decimal>();
+        // Header
+        csv.AppendLine("\"Date\",\"Category\",\"Amount\",\"Note\"");
+
+        Dictionary<string, decimal> categoryTotals = new();
         decimal total = 0;
 
         foreach (var e in expenses)
         {
-            string category = e.Category?.Name ?? "Uncategorized";
-            csv.AppendLine($"{e.ExpenseDate:yyyy-MM-dd},{category},{e.Amount},{e.Note}");
+            string category = SanitizeForCsv(e.Category?.Name ?? "Uncategorized");
+            string note = SanitizeForCsv(e.Note ?? "");
+
+            string date = e.ExpenseDate.ToString("yyyy-MM-dd");
+            string amount = e.Amount.ToString();
+
+            csv.AppendLine($"\"{date}\",\"{category}\",\"{amount}\",\"{note}\"");
 
             if (categoryTotals.ContainsKey(category))
                 categoryTotals[category] += e.Amount;
@@ -42,64 +49,66 @@ public class ReportService : IReportService
             total += e.Amount;
         }
 
+        // Category totals section
         csv.AppendLine();
-        csv.AppendLine("Category Totals:");
-        csv.AppendLine("Category,TotalAmount");
+        csv.AppendLine("\"--- Category Totals ---\"");
+        csv.AppendLine("\"Category\",\"TotalAmount\"");
         foreach (var c in categoryTotals)
-            csv.AppendLine($"{c.Key},{c.Value}");
+            csv.AppendLine($"\"{c.Key}\",\"{c.Value}\"");
 
+        // Grand total
         csv.AppendLine();
-        csv.AppendLine($"Total Expense:,{total}");
+        csv.AppendLine("\"Total Expense:\",\"" + total + "\"");
 
-        ExpenseReport expenseReport = new ExpenseReport
+        ExpenseReport expenseReport = new()
         {
             UserId = userId,
         };
-
         _expenseReportRepository.AddAsync(expenseReport);
         _expenseReportRepository.SaveChangesAsync();
 
         return new MemoryStream(Encoding.UTF8.GetBytes(csv.ToString()));
     }
 
+    private static string SanitizeForCsv(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return "";
+
+        // Escape quotes
+        string sanitized = input.Replace("\"", "\"\"");
+        return sanitized;
+    }
+
     public object GetUserExpenseSummary(int userId, UserCsvExportFilterRequestDto userCsvExportFilterRequestDto)
     {
         IEnumerable<Expense>? expenses = _expenseRepository.GetFilteredUserExpenses(userId, userCsvExportFilterRequestDto);
-        Dictionary<string, decimal>? categoryTotals = new Dictionary<string, decimal>();
-        decimal total = 0;
 
         bool isMonthly = userCsvExportFilterRequestDto.ReportType == ReportType.Monthly;
-        List<object> expenseList = new();
 
-        foreach (var e in expenses)
-        {
-            string category = e.Category?.Name ?? "Uncategorized";
-            string dateDisplay = isMonthly
-                ? e.ExpenseDate.ToDateTime(new TimeOnly(0)).ToString("MMMM yyyy")
-                : e.ExpenseDate.ToString("yyyy-MM-dd");
-
-            expenseList.Add(new
+        var groupedByCategory = expenses
+            .GroupBy(e => e.Category?.Name ?? "Uncategorized")
+            .Select(group => new
             {
-                Date = dateDisplay,
-                Category = category,
-                Amount = e.Amount,
-                Note = e.Note
-            });
+                Category = group.Key,
+                TotalAmount = group.Sum(e => e.Amount),
+                Expenses = group.Select(e => new
+                {
+                    Date = isMonthly
+                        ? e.ExpenseDate.ToDateTime(new TimeOnly(0)).ToString("MMMM yyyy")
+                        : e.ExpenseDate.ToString("yyyy-MM-dd"),
+                    Amount = e.Amount,
+                    Note = e.Note
+                }).ToList()
+            }).ToList();
 
-            if (categoryTotals.ContainsKey(category))
-                categoryTotals[category] += e.Amount;
-            else
-                categoryTotals[category] = e.Amount;
-
-            total += e.Amount;
-        }
+        decimal totalExpense = groupedByCategory.Sum(g => g.TotalAmount);
 
         return new
         {
-            Expenses = expenseList,
-            CategoryTotals = categoryTotals.Select(ct => new { Category = ct.Key, TotalAmount = ct.Value }),
-            TotalExpense = total
+            Categories = groupedByCategory,
+            TotalExpense = totalExpense
         };
     }
+
 
 }

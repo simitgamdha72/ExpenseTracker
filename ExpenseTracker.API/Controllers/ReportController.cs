@@ -59,7 +59,6 @@ public class ReportController : ControllerBase
             {
                 Response<object> responseError = new Response<object>
                 {
-                    Message = ErrorMessages.InvalidCredentials,
                     Succeeded = false,
                     StatusCode = (int)HttpStatusCode.BadRequest,
                     Data = null,
@@ -83,7 +82,6 @@ public class ReportController : ControllerBase
             {
                 Response<object> responseError = new Response<object>
                 {
-                    Message = ErrorMessages.InvalidCredentials,
                     Succeeded = false,
                     StatusCode = (int)HttpStatusCode.BadRequest,
                     Data = null,
@@ -178,7 +176,6 @@ public class ReportController : ControllerBase
             {
                 Response<object> responseError = new Response<object>
                 {
-                    Message = ErrorMessages.InvalidCredentials,
                     Succeeded = false,
                     StatusCode = (int)HttpStatusCode.BadRequest,
                     Data = null,
@@ -201,7 +198,6 @@ public class ReportController : ControllerBase
             {
                 Response<object> responseError = new Response<object>
                 {
-                    Message = ErrorMessages.InvalidCredentials,
                     Succeeded = false,
                     StatusCode = (int)HttpStatusCode.BadRequest,
                     Data = null,

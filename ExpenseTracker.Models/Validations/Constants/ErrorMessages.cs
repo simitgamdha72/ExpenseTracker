@@ -28,7 +28,7 @@ namespace ExpenseTracker.Models.Validations.Constants.ErrorMessages
         public const string ExportCsvFailed = "An error occurred while exporting expenses.";
         public const string InternalServerError = "An Internal server error occurred. Please try again later.";
         public const string NotFound = "Not found";
-        public const string InvalidRole = "Invalid role. Role must be 1 or 2.";
+        public const string InvalidRole = "Invalid role.";
         public const string UnauthorizedAccess = "Unauthorized access. Please log in.";
 
     }

@@ -11,12 +11,10 @@ using Microsoft.AspNetCore.Mvc;
 [ApiController]
 public class AuthController : ControllerBase
 {
-    private readonly ILogger<AuthController> _logger;
     private readonly IAuthService _authService;
 
-    public AuthController(IAuthService authService, ILogger<AuthController> logger)
+    public AuthController(IAuthService authService)
     {
-        _logger = logger;
         _authService = authService;
     }
 
@@ -40,19 +38,27 @@ public class AuthController : ControllerBase
 
             User user = await _authService.RegisterAsync(registerRequestDto);
 
-            Response<User> response = new Response<User>
+            Response<RegisterRequestDto> response = new Response<RegisterRequestDto>
             {
                 Message = SuccessMessages.UserRegistered,
                 StatusCode = (int)HttpStatusCode.OK,
                 Succeeded = true,
-                Data = user
+                Data = new RegisterRequestDto
+                {
+                    Username = user.Username,
+                    Email = user.Email,
+                    RoleId = user.RoleId,
+                    Firstname = user.Firstname,
+                    Lastname = user.Lastname,
+                    Contactnumber = user.Contactnumber,
+                    Address = user.Address,
+                }
             };
 
             return Ok(response);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, ErrorMessages.RegistrationFailed);
 
             if (ex.Message == ErrorMessages.EmailOrUsernameExists)
             {
@@ -117,8 +123,6 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, ErrorMessages.LoginFailed);
-
             Response<object> response = new Response<object>
             {
                 Message = ErrorMessages.LoginFailed,
