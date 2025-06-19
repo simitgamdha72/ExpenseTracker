@@ -33,6 +33,7 @@ public class AuthService : IAuthService
 
     public async Task<User> RegisterAsync(RegisterRequestDto registerRequestDto)
     {
+        
         if (await _userRepository.EmailOrUsernameExistsAsync(registerRequestDto.Email, registerRequestDto.Username))
         {
             throw new Exception(ErrorMessages.EmailOrUsernameExists);
