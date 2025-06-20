@@ -6,6 +6,7 @@ using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
 using ExpenseTracker.Models.Validations.Constants.SuccessMessages;
 using ExpenseTracker.Repository.Interface;
 using ExpenseTracker.Service.Interface;
+using Microsoft.Extensions.Logging;
 
 namespace ExpenseTracker.Service.Implementation;
 
@@ -13,19 +14,25 @@ public class ExpensesService : IExpensesService
 {
     private readonly IExpenseRepository _expenseRepository;
     private readonly IExpenseCategoryRepository _expenseCategoryRepository;
+    private readonly ILogger<ExpensesService> _logger;
 
-    public ExpensesService(IExpenseRepository expenseRepository, IExpenseCategoryRepository expenseCategoryRepository)
+    public ExpensesService(IExpenseRepository expenseRepository, IExpenseCategoryRepository expenseCategoryRepository, ILogger<ExpensesService> logger)
     {
         _expenseRepository = expenseRepository;
         _expenseCategoryRepository = expenseCategoryRepository;
+        _logger = logger;
     }
 
     public async Task<Response<object>> GetExpensesWithResponseAsync(ClaimsPrincipal user)
     {
         try
         {
+            _logger.LogInformation("Fetching expenses for the authenticated user.");
+
             if (!user.Identity!.IsAuthenticated)
             {
+                _logger.LogWarning("Unauthorized access attempt: user not authenticated.");
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.UnauthorizedAccess,
@@ -40,6 +47,8 @@ public class ExpensesService : IExpensesService
 
             if (userId == 0)
             {
+                _logger.LogWarning("Invalid user ID extracted from claims.");
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.UnauthorizedAccess,
@@ -49,6 +58,8 @@ public class ExpensesService : IExpensesService
                     Errors = new[] { ErrorMessages.UserNotFound }
                 };
             }
+
+            _logger.LogInformation("User ID {UserId} authenticated. Fetching expenses...", userId);
 
             IEnumerable<Expense> expenses = await _expenseRepository.GetAllAsync();
             IEnumerable<Expense>? filtered = expenses.Where(e => e.UserId == userId);
@@ -68,6 +79,8 @@ public class ExpensesService : IExpensesService
                 });
             }
 
+            _logger.LogInformation("Fetched {Count} expenses for user ID {UserId}.", expenseDtos.Count, userId);
+
             return new Response<object>
             {
                 Message = SuccessMessages.ExpensesFetched,
@@ -78,6 +91,8 @@ public class ExpensesService : IExpensesService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "An error occurred while fetching expenses for the user.");
+
             return new Response<object>
             {
                 Message = ErrorMessages.GetExpensesFailed,
@@ -93,8 +108,12 @@ public class ExpensesService : IExpensesService
     {
         try
         {
+            _logger.LogInformation("Attempting to fetch expense with ID: {ExpenseId}", id);
+
             if (!user.Identity!.IsAuthenticated)
             {
+                _logger.LogWarning("Unauthorized request for expense ID {ExpenseId}: user not authenticated.", id);
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.UnauthorizedAccess,
@@ -109,6 +128,8 @@ public class ExpensesService : IExpensesService
 
             if (userId == 0)
             {
+                _logger.LogWarning("Invalid user ID extracted while requesting expense ID {ExpenseId}.", id);
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.UnauthorizedAccess,
@@ -119,10 +140,14 @@ public class ExpensesService : IExpensesService
                 };
             }
 
+            _logger.LogInformation("Fetching expense ID {ExpenseId} for user ID {UserId}.", id, userId);
+
             Expense? expense = await _expenseRepository.GetByIdAsync(id);
 
             if (expense == null || expense.UserId != userId)
             {
+                _logger.LogWarning("Expense not found or doesn't belong to user. Expense ID: {ExpenseId}, User ID: {UserId}", id, userId);
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.ExpenseNotFound,
@@ -143,6 +168,8 @@ public class ExpensesService : IExpensesService
                 Note = expense.Note
             };
 
+            _logger.LogInformation("Expense ID {ExpenseId} successfully fetched for user ID {UserId}.", id, userId);
+
             return new Response<object>
             {
                 Message = SuccessMessages.ExpensesFetched,
@@ -153,6 +180,8 @@ public class ExpensesService : IExpensesService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "An error occurred while fetching expense with ID: {ExpenseId}", id);
+
             return new Response<object>
             {
                 Message = ErrorMessages.GetExpensesFailed,
@@ -168,8 +197,12 @@ public class ExpensesService : IExpensesService
     {
         try
         {
+            _logger.LogInformation("Creating expense for category: {Category}", expenseDto.Category);
+
             if (!user.Identity!.IsAuthenticated)
             {
+                _logger.LogWarning("Unauthorized request to create expense. User not authenticated.");
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.UnauthorizedAccess,
@@ -184,6 +217,8 @@ public class ExpensesService : IExpensesService
 
             if (userId == 0)
             {
+                _logger.LogWarning("Invalid user ID while creating expense.");
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.UnauthorizedAccess,
@@ -196,6 +231,8 @@ public class ExpensesService : IExpensesService
 
             if (!await _expenseCategoryRepository.ExistsByNameAsync(expenseDto.Category ?? ""))
             {
+                _logger.LogWarning("Attempted to create expense with invalid category: {Category}", expenseDto.Category);
+
                 return new Response<object>
                 {
                     Succeeded = false,
@@ -220,6 +257,8 @@ public class ExpensesService : IExpensesService
             await _expenseRepository.AddAsync(expense);
             await _expenseRepository.SaveChangesAsync();
 
+            _logger.LogInformation("Expense created successfully. ID: {ExpenseId}, User ID: {UserId}", expense.Id, userId);
+
             ExpenseDto createdDto = new ExpenseDto
             {
                 Id = expense.Id,
@@ -239,6 +278,8 @@ public class ExpensesService : IExpensesService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "An error occurred while creating an expense.");
+
             return new Response<object>
             {
                 Message = ErrorMessages.CreateExpenseFailed,
@@ -254,8 +295,12 @@ public class ExpensesService : IExpensesService
     {
         try
         {
+            _logger.LogInformation("Attempting to update expense ID: {ExpenseId}", id);
+
             if (!user.Identity!.IsAuthenticated)
             {
+                _logger.LogWarning("Unauthorized update attempt for expense ID {ExpenseId}. User not authenticated.", id);
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.UnauthorizedAccess,
@@ -270,6 +315,8 @@ public class ExpensesService : IExpensesService
 
             if (userId == 0)
             {
+                _logger.LogWarning("Invalid user ID while updating expense ID {ExpenseId}.", id);
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.UnauthorizedAccess,
@@ -284,6 +331,8 @@ public class ExpensesService : IExpensesService
 
             if (expense == null || expense.UserId != userId)
             {
+                _logger.LogWarning("Expense not found or does not belong to the user. Expense ID: {ExpenseId}, User ID: {UserId}", id, userId);
+
                 return new Response<object>
                 {
                     Succeeded = false,
@@ -294,6 +343,8 @@ public class ExpensesService : IExpensesService
 
             if (!await _expenseCategoryRepository.ExistsByNameAsync(expenseDto.Category ?? ""))
             {
+                _logger.LogWarning("Invalid category '{Category}' for update of expense ID: {ExpenseId}", expenseDto.Category, id);
+
                 return new Response<object>
                 {
                     Succeeded = false,
@@ -312,6 +363,8 @@ public class ExpensesService : IExpensesService
 
             _expenseRepository.Update(expense);
             await _expenseRepository.SaveChangesAsync();
+
+            _logger.LogInformation("Expense ID {ExpenseId} updated successfully by user ID {UserId}.", expense.Id, userId);
 
             ExpenseDto? updatedExpense = new ExpenseDto
             {
@@ -332,6 +385,8 @@ public class ExpensesService : IExpensesService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "An error occurred while updating expense ID: {ExpenseId}", id);
+
             return new Response<object>
             {
                 Message = ErrorMessages.UpdateExpenseFailed,
@@ -347,8 +402,12 @@ public class ExpensesService : IExpensesService
     {
         try
         {
+            _logger.LogInformation("Attempting to delete expense with ID: {ExpenseId}", id);
+
             if (!user.Identity!.IsAuthenticated)
             {
+                _logger.LogWarning("Unauthorized delete attempt for expense ID {ExpenseId}. User not authenticated.", id);
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.UnauthorizedAccess,
@@ -361,6 +420,8 @@ public class ExpensesService : IExpensesService
             int userId = int.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
             if (userId == 0)
             {
+                _logger.LogWarning("Invalid user ID during delete attempt. Expense ID: {ExpenseId}", id);
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.UnauthorizedAccess,
@@ -374,6 +435,8 @@ public class ExpensesService : IExpensesService
 
             if (expense == null || expense.UserId != userId)
             {
+                _logger.LogWarning("Expense not found or does not belong to user. Expense ID: {ExpenseId}, User ID: {UserId}", id, userId);
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.ExpenseNotFound,
@@ -386,6 +449,8 @@ public class ExpensesService : IExpensesService
             _expenseRepository.Delete(expense);
             await _expenseRepository.SaveChangesAsync();
 
+            _logger.LogInformation("Expense ID {ExpenseId} deleted successfully by user ID {UserId}.", id, userId);
+
             return new Response<object>
             {
                 Message = SuccessMessages.ExpenseDeleted,
@@ -395,6 +460,8 @@ public class ExpensesService : IExpensesService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "An error occurred while deleting expense ID: {ExpenseId}", id);
+
             return new Response<object>
             {
                 Message = ErrorMessages.DeleteExpenseFailed,
@@ -409,6 +476,9 @@ public class ExpensesService : IExpensesService
     {
         try
         {
+            _logger.LogInformation("Fetching all users' expenses. Filtering by usernames: {Usernames}", userNames != null ? string.Join(", ", userNames) : "None");
+
+
             IEnumerable<Expense> expenses = await _expenseRepository.GetAllExpense();
 
             List<ExpenseDetailsDto> expenseDetailsDto = new();
@@ -419,6 +489,9 @@ public class ExpensesService : IExpensesService
                 HashSet<string> foundUsernames = expenses.Select(e => e.User!.Username).Distinct().ToHashSet();
                 notFoundUsernames = userNames.Where(un => !foundUsernames.Contains(un)).ToList();
                 expenses = expenses.Where(e => userNames.Contains(e.User!.Username));
+
+                _logger.LogInformation("Usernames not found: {NotFound}", string.Join(", ", notFoundUsernames));
+
             }
 
             foreach (var e in expenses)
@@ -445,6 +518,8 @@ public class ExpensesService : IExpensesService
                 NotFoundUsernames = notFoundUsernames
             };
 
+            _logger.LogInformation("Fetched {Count} expenses. {MissingCount} usernames not found.", expenseDetailsDto.Count, notFoundUsernames.Count);
+
             return new Response<FilteredExpenseReportDto>
             {
                 Message = SuccessMessages.ExpensesFetched,
@@ -455,6 +530,8 @@ public class ExpensesService : IExpensesService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "An error occurred while fetching expenses for users.");
+
             return new Response<FilteredExpenseReportDto>
             {
                 Message = ErrorMessages.GetExpensesFailed,

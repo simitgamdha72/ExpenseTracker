@@ -5,22 +5,27 @@ using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
 using ExpenseTracker.Models.Validations.Constants.SuccessMessages;
 using ExpenseTracker.Repository.Interface;
 using ExpenseTracker.Service.Interface;
+using Microsoft.Extensions.Logging;
 
 namespace ExpenseTracker.Service.Implementation;
 
 public class ExpenseCategoriesService : IExpenseCategoriesService
 {
     private readonly IExpenseCategoryRepository _expenseCategoryRepository;
+    private readonly ILogger<ExpenseCategoriesService> _logger;
 
-    public ExpenseCategoriesService(IExpenseCategoryRepository expenseCategoryRepository)
+    public ExpenseCategoriesService(IExpenseCategoryRepository expenseCategoryRepository, ILogger<ExpenseCategoriesService> logger)
     {
         _expenseCategoryRepository = expenseCategoryRepository;
+        _logger = logger;
     }
 
     public async Task<Response<object>> GetCategoriesWithResponseAsync()
     {
         try
         {
+            _logger.LogInformation("Fetching all expense categories.");
+
             IEnumerable<ExpenseCategory>? categories = await _expenseCategoryRepository.GetAllAsync();
 
             IEnumerable<ExpenseCategoryDto>? dtoList = categories.Select(c => new ExpenseCategoryDto
@@ -29,6 +34,8 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
                 Name = c.Name,
                 Description = c.Description
             });
+
+            _logger.LogInformation("Fetched {Count} expense categories successfully.", dtoList.Count());
 
             return new Response<object>
             {
@@ -40,6 +47,8 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "An error occurred while fetching expense categories.");
+
             return new Response<object>
             {
                 Message = ErrorMessages.InternalServerError,
@@ -55,10 +64,14 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
     {
         try
         {
+            _logger.LogInformation("Fetching expense category with ID: {CategoryId}", id);
+
             ExpenseCategory? category = await _expenseCategoryRepository.GetByIdAsync(id);
 
             if (category == null)
             {
+                _logger.LogWarning("Expense category not found for ID: {CategoryId}", id);
+
                 return new Response<object>
                 {
                     Succeeded = false,
@@ -75,6 +88,8 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
                 Description = category.Description
             };
 
+            _logger.LogInformation("Successfully fetched category: {CategoryName} (ID: {CategoryId})", category.Name, category.Id);
+
             return new Response<object>
             {
                 Message = SuccessMessages.CategoryFetched,
@@ -85,6 +100,8 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "An error occurred while fetching category with ID: {CategoryId}", id);
+
             return new Response<object>
             {
                 Message = ErrorMessages.InternalServerError,
@@ -100,9 +117,13 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
     {
         try
         {
+            _logger.LogInformation("Creating expense category with name: {CategoryName}", expenseCategoryDto.Name);
+
             bool exists = await _expenseCategoryRepository.ExistsByNameAsync(expenseCategoryDto.Name);
             if (exists)
             {
+                _logger.LogWarning("Category creation failed: Category name already exists - {CategoryName}", expenseCategoryDto.Name);
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.CategoryNameExists,
@@ -124,6 +145,8 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
             await _expenseCategoryRepository.AddAsync(category);
             await _expenseCategoryRepository.SaveChangesAsync();
 
+            _logger.LogInformation("Expense category created successfully with ID: {CategoryId}", category.Id);
+
             return new Response<object>
             {
                 Message = SuccessMessages.Created,
@@ -134,6 +157,8 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "An exception occurred while creating expense category: {CategoryName}", expenseCategoryDto.Name);
+
             return new Response<object>
             {
                 Message = ErrorMessages.InternalServerError,
@@ -149,10 +174,14 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
     {
         try
         {
+            _logger.LogInformation("Attempting to update expense category with ID: {CategoryId}", id);
+
             ExpenseCategory? category = await _expenseCategoryRepository.GetByIdAsync(id);
 
             if (category == null)
             {
+                _logger.LogWarning("Category not found for update. ID: {CategoryId}", id);
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.CategoryNotFound,
@@ -166,6 +195,9 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
             bool nameExists = await _expenseCategoryRepository.ExistsByNameExceptIdAsync(expenseCategoryDto.Name, id);
             if (nameExists)
             {
+                _logger.LogWarning("Category name already exists for another category. Name: {CategoryName}, ID: {CategoryId}",
+                   expenseCategoryDto.Name, id);
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.CategoryNameExists,
@@ -182,6 +214,8 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
 
             await _expenseCategoryRepository.SaveChangesAsync();
 
+            _logger.LogInformation("Category updated successfully. ID: {CategoryId}", id);
+
             return new Response<object>
             {
                 Message = SuccessMessages.Updated,
@@ -192,6 +226,8 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "An error occurred while updating category with ID: {CategoryId}", id);
+
             return new Response<object>
             {
                 Message = ErrorMessages.InternalServerError,
@@ -207,10 +243,14 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
     {
         try
         {
+            _logger.LogInformation("Attempting to delete expense category with ID: {CategoryId}", id);
+
             ExpenseCategory? category = await _expenseCategoryRepository.GetByIdAsync(id);
 
             if (category == null)
             {
+                _logger.LogWarning("Category not found for deletion. ID: {CategoryId}", id);
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.CategoryNotFound,
@@ -224,6 +264,8 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
             _expenseCategoryRepository.Delete(category);
             await _expenseCategoryRepository.SaveChangesAsync();
 
+            _logger.LogInformation("Category deleted successfully. ID: {CategoryId}", id);
+
             return new Response<object>
             {
                 Message = SuccessMessages.CategoryDeleted,
@@ -234,6 +276,8 @@ public class ExpenseCategoriesService : IExpenseCategoriesService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "An error occurred while deleting category with ID: {CategoryId}", id);
+
             return new Response<object>
             {
                 Message = ErrorMessages.InternalServerError,

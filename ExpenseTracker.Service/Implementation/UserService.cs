@@ -5,21 +5,20 @@ using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
 using ExpenseTracker.Models.Validations.Constants.SuccessMessages;
 using ExpenseTracker.Repository.Interface;
 using ExpenseTracker.Service.Interface;
+using Microsoft.Extensions.Logging;
 
 namespace ExpenseTracker.Service.Implementation;
 
 public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
-    public UserService(IUserRepository userRepository)
+    private readonly ILogger<UserService> _logger;
+
+    public UserService(IUserRepository userRepository, ILogger<UserService> logger)
     {
         _userRepository = userRepository;
+        _logger = logger;
     }
-
-    // public async Task<UserProfileResponseDto?> GetUserByIdAsync(int? userId)
-    // {
-    //     return await _userRepository.GetByIdAsync(userId);
-    // }
 
     public async Task<Response<object>> GetUserProfileAsync(ClaimsPrincipal user)
     {
@@ -27,6 +26,8 @@ public class UserService : IUserService
         {
             if (!user.Identity!.IsAuthenticated)
             {
+                _logger.LogWarning("Unauthorized access attempt to GetUserProfile.");
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.UnauthorizedAccess,
@@ -40,6 +41,8 @@ public class UserService : IUserService
 
             if (userId == 0)
             {
+                _logger.LogWarning("User ID parsing failed or is 0 in GetUserProfile.");
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.UnauthorizedAccess,
@@ -53,6 +56,8 @@ public class UserService : IUserService
 
             if (profile == null)
             {
+                _logger.LogWarning("User profile not found. UserId: {UserId}", userId);
+
                 return new Response<object>
                 {
                     Message = ErrorMessages.UnauthorizedAccess,
@@ -61,6 +66,8 @@ public class UserService : IUserService
                     Errors = new[] { ErrorMessages.UserNotFound }
                 };
             }
+
+            _logger.LogInformation("User profile fetched successfully. UserId: {UserId}", userId);
 
             return new Response<object>
             {
@@ -72,6 +79,8 @@ public class UserService : IUserService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Exception occurred in GetUserProfileAsync.");
+
             return new Response<object>
             {
                 Message = ErrorMessages.InternalServerError,
