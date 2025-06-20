@@ -1,3 +1,4 @@
+using System.Net;
 using ExpenseTracker.Models.Dto;
 using ExpenseTracker.Models.Models;
 using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
@@ -19,43 +20,123 @@ public class AuthService : IAuthService
         _jwt = jwt;
     }
 
-    public async Task<string?> LoginAsync(LoginRequestDto loginRequestDto)
+    public async Task<Response<object?>> LoginUserAsync(LoginRequestDto loginRequestDto)
     {
-        User? user = await _userRepository.GetByEmailAsync(loginRequestDto.Email);
-
-        if (user == null || !BCrypt.Net.BCrypt.Verify(loginRequestDto.Password, user.PasswordHash))
+        try
         {
-            return null;
-        }
+            // Check if user exists
+            User? user = await _userRepository.GetByEmailAsync(loginRequestDto.Email);
 
-        return _jwt.GenerateToken(user);
+            // Invalid credentials
+            if (user == null || !BCrypt.Net.BCrypt.Verify(loginRequestDto.Password, user.PasswordHash))
+            {
+                return new Response<object?>
+                {
+                    Message = ErrorMessages.InvalidCredentials,
+                    StatusCode = (int)HttpStatusCode.BadRequest,
+                    Succeeded = false
+                };
+            }
+
+            // Generate JWT token
+            string token = _jwt.GenerateToken(user);
+
+            return new Response<object?>
+            {
+                Message = SuccessMessages.LoginSuccessful,
+                StatusCode = (int)HttpStatusCode.OK,
+                Succeeded = true,
+                Data = token
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Response<object?>
+            {
+                Message = ErrorMessages.LoginFailed,
+                StatusCode = (int)HttpStatusCode.BadRequest,
+                Succeeded = false,
+                Errors = new[] { ex.Message }
+            };
+        }
     }
 
-    public async Task<User> RegisterAsync(RegisterRequestDto registerRequestDto)
+    public async Task<Response<object?>> RegisterUserAsync(RegisterRequestDto registerRequestDto)
     {
-        
-        if (await _userRepository.EmailOrUsernameExistsAsync(registerRequestDto.Email, registerRequestDto.Username))
+        try
         {
-            throw new Exception(ErrorMessages.EmailOrUsernameExists);
+            // Role Validation
+            if (registerRequestDto.RoleId != 1 && registerRequestDto.RoleId != 2)
+            {
+                return new Response<object?>
+                {
+                    Message = ErrorMessages.InvalidRole,
+                    StatusCode = (int)HttpStatusCode.BadRequest,
+                    Succeeded = false
+                };
+            }
+
+            // Check if user exists
+            bool exists = await _userRepository.EmailOrUsernameExistsAsync(registerRequestDto.Email, registerRequestDto.Username);
+            if (exists)
+            {
+                return new Response<object?>
+                {
+                    Message = ErrorMessages.EmailOrUsernameExists,
+                    StatusCode = (int)HttpStatusCode.Conflict,
+                    Succeeded = false,
+                    Errors = new[] { ErrorMessages.EmailOrUsernameExists }
+                };
+            }
+
+            // Create user
+            User? user = new User
+            {
+                Username = registerRequestDto.Username,
+                Email = registerRequestDto.Email,
+                Firstname = registerRequestDto.Firstname,
+                Lastname = registerRequestDto.Lastname,
+                Contactnumber = registerRequestDto.Contactnumber,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerRequestDto.Password),
+                RoleId = registerRequestDto.RoleId ?? 1,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                Address = registerRequestDto.Address,
+            };
+
+            await _userRepository.AddAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            // Return successful response
+            RegisterRequestDto? data = new RegisterRequestDto
+            {
+                Username = user.Username,
+                Email = user.Email,
+                RoleId = user.RoleId,
+                Firstname = user.Firstname,
+                Lastname = user.Lastname,
+                Contactnumber = user.Contactnumber,
+                Address = user.Address
+            };
+
+            return new Response<object?>
+            {
+                Message = SuccessMessages.UserRegistered,
+                StatusCode = (int)HttpStatusCode.OK,
+                Succeeded = true,
+                Data = data
+            };
         }
-
-        User user = new User
+        catch (Exception ex)
         {
-            Username = registerRequestDto.Username,
-            Email = registerRequestDto.Email,
-            Firstname = registerRequestDto.Firstname,
-            Lastname = registerRequestDto.Lastname,
-            Contactnumber = registerRequestDto.Contactnumber,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerRequestDto.Password),
-            RoleId = registerRequestDto.RoleId ?? 1,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
-            Address = registerRequestDto.Address,
-        };
-
-        await _userRepository.AddAsync(user);
-        await _userRepository.SaveChangesAsync();
-
-        return user;
+            return new Response<object?>
+            {
+                Message = ErrorMessages.RegistrationFailed,
+                StatusCode = (int)HttpStatusCode.BadRequest,
+                Succeeded = false,
+                Errors = new[] { ex.Message }
+            };
+        }
     }
+
 }

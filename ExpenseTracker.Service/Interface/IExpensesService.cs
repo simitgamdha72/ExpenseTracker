@@ -1,14 +1,15 @@
+using System.Security.Claims;
 using ExpenseTracker.Models.Dto;
-using ExpenseTracker.Models.Models;
 
 namespace ExpenseTracker.Service.Interface;
 
 public interface IExpensesService
 {
-    Task<IEnumerable<ExpenseDto>> GetExpensesByUserIdAsync(int? userId);
-    Task<ExpenseDto?> GetExpenseByIdAsync(int id, int? userId);
-    Task<(bool Success, string Message, Expense? expense)> CreateExpenseAsync(int? userId, ExpenseDto dto);
-    Task<(bool Success, string Message, Expense? expense)> UpdateExpenseAsync(int id, int? userId, ExpenseDto dto);
-    Task<(bool Success, string Message)> DeleteExpenseAsync(int id, int? userId);
-    Task<FilteredExpenseReportDto> GetAllUsersExpensesAsync(List<string>? userNames = null);
+    Task<Response<object>> GetExpensesWithResponseAsync(ClaimsPrincipal user);
+    Task<Response<object>> GetExpenseResponseByIdAsync(int id, ClaimsPrincipal user);
+    Task<Response<object>> CreateExpenseResponseAsync(ExpenseDto expenseDto, ClaimsPrincipal user);
+    Task<Response<object>> UpdateExpenseResponseAsync(int id, ExpenseDto expenseDto, ClaimsPrincipal user);
+    Task<Response<object>> DeleteExpenseResponseAsync(int id, ClaimsPrincipal user);
+    Task<Response<FilteredExpenseReportDto>> GetAllUsersExpensesResponseAsync(List<string>? userNames = null);
+
 }

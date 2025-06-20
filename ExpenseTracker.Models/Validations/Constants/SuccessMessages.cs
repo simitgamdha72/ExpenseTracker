@@ -14,6 +14,8 @@ namespace ExpenseTracker.Models.Validations.Constants.SuccessMessages
         public const string CategoryFetched = "Category fetched successfully.";
         public const string CategoriesFetched = "Categories fetched successfully.";
         public const string ExpensesFetched = "Expenses fetched successfully.";
+        public const string CsvExportSuccessful = "CSV export completed successfully.";
+        public const string ProfileFetched = "Profile data fetched successfully";
 
 
     }

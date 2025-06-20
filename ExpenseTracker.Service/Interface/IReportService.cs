@@ -1,11 +1,13 @@
+using System.Security.Claims;
 using ExpenseTracker.Models.Dto;
 
 namespace ExpenseTracker.Service.Interface;
 
 public interface IReportService
 {
-    public MemoryStream ExportUserExpensesToCsv(int userId, UserCsvExportFilterRequestDto userCsvExportFilterRequestDto);
 
-    public object GetUserExpenseSummary(int userId, UserCsvExportFilterRequestDto userCsvExportFilterRequestDto);
+    (MemoryStream FileStream, Response<object> Response) ExportUserExpensesToCsv(ClaimsPrincipal user, UserCsvExportFilterRequestDto filterDto);
+
+    Response<object> GetUserExpenseSummary(ClaimsPrincipal user, UserCsvExportFilterRequestDto filterDto);
 
 }

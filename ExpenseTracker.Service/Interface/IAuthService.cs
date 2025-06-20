@@ -5,6 +5,6 @@ namespace ExpenseTracker.Service.Interface;
 
 public interface IAuthService
 {
-    Task<string?> LoginAsync(LoginRequestDto loginRequestDto);
-    Task<User> RegisterAsync(RegisterRequestDto registerRequestDto);
+    Task<Response<object?>> RegisterUserAsync(RegisterRequestDto registerRequestDto);
+    Task<Response<object?>> LoginUserAsync(LoginRequestDto loginRequestDto);
 }

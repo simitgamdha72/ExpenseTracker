@@ -22,117 +22,16 @@ public class AuthController : ControllerBase
     [Trim]
     public async Task<IActionResult> Register(RegisterRequestDto registerRequestDto)
     {
-        try
-        {
-
-            if (registerRequestDto.RoleId != 1 && registerRequestDto.RoleId != 2)
-            {
-                Response<object?> responseError = new Response<object?>
-                {
-                    Message = ErrorMessages.InvalidRole,
-                    StatusCode = (int)HttpStatusCode.BadRequest,
-                    Succeeded = false,
-                };
-                return BadRequest(responseError);
-            }
-
-            User user = await _authService.RegisterAsync(registerRequestDto);
-
-            Response<RegisterRequestDto> response = new Response<RegisterRequestDto>
-            {
-                Message = SuccessMessages.UserRegistered,
-                StatusCode = (int)HttpStatusCode.OK,
-                Succeeded = true,
-                Data = new RegisterRequestDto
-                {
-                    Username = user.Username,
-                    Email = user.Email,
-                    RoleId = user.RoleId,
-                    Firstname = user.Firstname,
-                    Lastname = user.Lastname,
-                    Contactnumber = user.Contactnumber,
-                    Address = user.Address,
-                }
-            };
-
-            return Ok(response);
-        }
-        catch (Exception ex)
-        {
-
-            if (ex.Message == ErrorMessages.EmailOrUsernameExists)
-            {
-
-                Response<object> response = new Response<object>
-                {
-                    Message = ErrorMessages.EmailOrUsernameExists,
-                    Succeeded = false,
-                    StatusCode = (int)HttpStatusCode.Conflict,
-                    Data = null,
-                    Errors = new[] { ex.Message }
-                };
-
-                return BadRequest(response);
-            }
-            else
-            {
-                Response<object> response = new Response<object>
-                {
-                    Message = ErrorMessages.RegistrationFailed,
-                    Succeeded = false,
-                    StatusCode = (int)HttpStatusCode.BadRequest,
-                    Data = null,
-                    Errors = new[] { ex.Message }
-                };
-
-                return BadRequest(response);
-            }
-
-        }
+        Response<object?>? result = await _authService.RegisterUserAsync(registerRequestDto);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPost("login")]
     [Trim]
     public async Task<IActionResult> Login(LoginRequestDto loginRequestDto)
     {
-        try
-        {
-
-            string? token = await _authService.LoginAsync(loginRequestDto);
-
-            if (token == null)
-            {
-                Response<object?> responseError = new Response<object?>
-                {
-                    Message = ErrorMessages.InvalidCredentials,
-                    StatusCode = (int)HttpStatusCode.BadRequest,
-                    Succeeded = false,
-                };
-                return BadRequest(responseError);
-            }
-
-            Response<object> response = new Response<object>
-            {
-                Message = SuccessMessages.LoginSuccessful,
-                Succeeded = true,
-                StatusCode = (int)HttpStatusCode.OK,
-                Data = token
-            };
-
-            return Ok(response);
-        }
-        catch (Exception ex)
-        {
-            Response<object> response = new Response<object>
-            {
-                Message = ErrorMessages.LoginFailed,
-                Succeeded = false,
-                StatusCode = (int)HttpStatusCode.BadRequest,
-                Data = null,
-                Errors = new[] { ex.Message }
-            };
-            return BadRequest(response);
-        }
+        Response<object?>? result = await _authService.LoginUserAsync(loginRequestDto);
+        return StatusCode(result.StatusCode, result);
     }
 
 }
