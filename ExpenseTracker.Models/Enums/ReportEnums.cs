@@ -8,11 +8,12 @@ namespace ExpenseTracker.Models.Enums
         Monthly
     }
 
-[JsonConverter(typeof(JsonStringEnumConverter))]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum RangeType
     {
         LastMonth,
         Last3Months,
+        ThisMonth,
         Custom
     }
 }

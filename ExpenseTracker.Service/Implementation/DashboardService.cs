@@ -96,44 +96,90 @@ public class DashboardService : IDashboardService
             _logger.LogInformation("Retrieving filtered expenses.");
 
             // Proceed to summary generation
+            // IEnumerable<Expense>? expenses = _expenseRepository.GetFilteredExpenses(csvExportFilterRequestDto);
+            // bool isMonthly = csvExportFilterRequestDto.ReportType == ReportType.Monthly;
+
+            // var groupedByCategory = expenses
+            //     .GroupBy(exp => exp.Category?.Name ?? "Uncategorized")
+            //     .Select(group => new
+            //     {
+            //         Category = group.Key,
+            //         TotalAmount = group.Sum(e => e.Amount),
+            //         Expenses = group.Select(e => new
+            //         {
+            //             Id = e.Id,
+            //             Username = e.User?.Username,
+            //             Date = isMonthly
+            //                 ? e.ExpenseDate.ToDateTime(new TimeOnly(0)).ToString("MMMM yyyy")
+            //                 : e.ExpenseDate.ToString("yyyy-MM-dd"),
+            //             Amount = e.Amount,
+            //             Note = e.Note,
+            //             Category = e.Category?.Name ?? "Uncategorized"
+            //         }).ToList()
+            //     }).ToList();
+
+            // decimal grandTotal = groupedByCategory.Sum(g => g.TotalAmount);
+
+            // var summary = new
+            // {
+            //     Categories = groupedByCategory,
+            //     TotalExpense = grandTotal
+            // };
+
+            // _logger.LogInformation("Expense summary generated successfully. Category count: {CategoryCount}, Grand total: {GrandTotal}",
+            //   groupedByCategory.Count, grandTotal);
+
+            // return new Response<object?>
+            // {
+            //     Message = SuccessMessages.SummaryDataFetched,
+            //     StatusCode = (int)HttpStatusCode.OK,
+            //     Succeeded = true,
+            //     Data = summary
+            // };
+
             IEnumerable<Expense>? expenses = _expenseRepository.GetFilteredExpenses(csvExportFilterRequestDto);
+
+            Dictionary<string, decimal> categoryTotals = new Dictionary<string, decimal>();
+            decimal totalExpense = 0;
+
+            List<object> expenseList = new();
             bool isMonthly = csvExportFilterRequestDto.ReportType == ReportType.Monthly;
 
-            var groupedByCategory = expenses
-                .GroupBy(exp => exp.Category?.Name ?? "Uncategorized")
-                .Select(group => new
-                {
-                    Category = group.Key,
-                    TotalAmount = group.Sum(e => e.Amount),
-                    Expenses = group.Select(e => new
-                    {
-                        Username = e.User?.Username,
-                        Date = isMonthly
-                            ? e.ExpenseDate.ToDateTime(new TimeOnly(0)).ToString("MMMM yyyy")
-                            : e.ExpenseDate.ToString("yyyy-MM-dd"),
-                        Amount = e.Amount,
-                        Note = e.Note
-                    }).ToList()
-                }).ToList();
-
-            decimal grandTotal = groupedByCategory.Sum(g => g.TotalAmount);
-
-            var summary = new
+            foreach (var exp in expenses)
             {
-                Categories = groupedByCategory,
-                TotalExpense = grandTotal
-            };
+                string category = exp.Category?.Name ?? "Uncategorized";
+                string dateDisplay = isMonthly
+                    ? exp.ExpenseDate.ToDateTime(new TimeOnly(0)).ToString("MMMM yyyy")
+                    : exp.ExpenseDate.ToString("yyyy-MM-dd");
 
-            _logger.LogInformation("Expense summary generated successfully. Category count: {CategoryCount}, Grand total: {GrandTotal}",
-              groupedByCategory.Count, grandTotal);
+                expenseList.Add(new
+                {
+                    Username = exp.User?.Username,
+                    Date = dateDisplay,
+                    Category = category,
+                    Amount = exp.Amount,
+                    Note = exp.Note
+                });
+
+                if (categoryTotals.ContainsKey(category))
+                    categoryTotals[category] += exp.Amount;
+                else
+                    categoryTotals[category] = exp.Amount;
+
+                totalExpense += exp.Amount;
+            }
+
+            _logger.LogInformation("Expense summary generated successfully.");
 
             return new Response<object?>
             {
                 Message = SuccessMessages.SummaryDataFetched,
                 StatusCode = (int)HttpStatusCode.OK,
                 Succeeded = true,
-                Data = summary
+                Data = expenseList
             };
+
+
         }
         catch (Exception ex)
         {
@@ -305,7 +351,7 @@ public class DashboardService : IDashboardService
         catch (Exception ex)
         {
             _logger.LogError(ex, "An exception occurred while exporting expenses to CSV.");
-            
+
             return new Response<object?>
             {
                 Message = ErrorMessages.ExportCsvFailed,

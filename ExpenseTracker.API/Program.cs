@@ -108,10 +108,24 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowInfernoUI", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000") // your frontend
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+
 
 
 var app = builder.Build();
 
+
+app.UseHttpsRedirection();
+app.UseCors("AllowInfernoUI");
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -121,7 +135,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+
 
 app.UseAuthorization();
 

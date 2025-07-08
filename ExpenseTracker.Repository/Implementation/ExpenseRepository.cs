@@ -30,12 +30,19 @@ public class ExpenseRepository : Repository<Expense>, IExpenseRepository
             .Include(e => e.Category)
             .AsQueryable();
 
-        if (!string.IsNullOrEmpty(csvExportFilterRequestDto.Username))
-            expenses = expenses.Where(e => e.User!.Username.ToLower().Contains(csvExportFilterRequestDto.Username));
+        // if (!string.IsNullOrEmpty(csvExportFilterRequestDto.Username))
+        //     expenses = expenses.Where(e => e.User!.Username.ToLower().Contains(csvExportFilterRequestDto.Username.ToLower()));
 
-        if (!string.IsNullOrEmpty(csvExportFilterRequestDto.Category))
-            expenses = expenses.Where(e => e.Category!.Name.ToLower().Contains(csvExportFilterRequestDto.Category));
+        // if (!string.IsNullOrEmpty(csvExportFilterRequestDto.Category))
+        //     expenses = expenses.Where(e => e.Category!.Name.ToLower().Contains(csvExportFilterRequestDto.Category.ToLower()));
 
+        if (!string.IsNullOrWhiteSpace(csvExportFilterRequestDto.Username))
+        {
+            var search = csvExportFilterRequestDto.Username.ToLower();
+            expenses = expenses.Where(e =>
+                (e.User != null && e.User.Username != null && e.User.Username.ToLower().Contains(search)) ||
+                (e.Category != null && e.Category.Name != null && e.Category.Name.ToLower().Contains(search)));
+        }
 
         if (csvExportFilterRequestDto.ReportType == ReportType.Daily && csvExportFilterRequestDto.StartDate.HasValue && csvExportFilterRequestDto.EndDate.HasValue)
             expenses = expenses.Where(e => e.ExpenseDate >= csvExportFilterRequestDto.StartDate && e.ExpenseDate <= csvExportFilterRequestDto.EndDate);
@@ -55,6 +62,12 @@ public class ExpenseRepository : Repository<Expense>, IExpenseRepository
                 from = new DateOnly(start.Year, start.Month, 1);
                 DateTime end = DateTime.Today;
                 to = new DateOnly(end.Year, end.Month, DateTime.DaysInMonth(end.Year, end.Month));
+            }
+            else if (csvExportFilterRequestDto.RangeType == RangeType.ThisMonth)
+            {
+                DateTime now = DateTime.Today;
+                from = new DateOnly(now.Year, now.Month, 1);
+                to = DateOnly.FromDateTime(now); // today's date
             }
             else // custom
             {

@@ -1,8 +1,3 @@
-using System.Net;
-using System.Security.Claims;
-using ExpenseTracker.Models.Dto;
-using ExpenseTracker.Models.Validations.Constants.ErrorMessages;
-using ExpenseTracker.Models.Validations.Constants.SuccessMessages;
 using ExpenseTracker.Service.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
